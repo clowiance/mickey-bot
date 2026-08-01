@@ -2,14 +2,19 @@ package dev.clowiance.mickey.catalog.presentation;
 
 import dev.clowiance.mickey.catalog.application.UniversityCatalogService;
 import dev.clowiance.mickey.catalog.domain.EducationLevel;
+import dev.clowiance.mickey.catalog.domain.KnowledgeField;
 import dev.clowiance.mickey.catalog.domain.Specialty;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.text.NumberFormat;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -25,14 +30,20 @@ public class CatalogMessageRenderer {
         StringBuilder text = new StringBuilder();
         text.append("🎓 <b>").append(level.getDisplayName().toUpperCase(UA))
                 .append(" — СПЕЦІАЛЬНОСТІ УКД</b>\n")
-                .append("<i>2026 рік · ").append(programWord(specialties.size())).append("</i>\n")
-                .append(DIVIDER).append("\n");
+                .append("<i>2026 рік · ").append(programWord(specialties.size())).append("</i>\n");
 
-        for (Specialty specialty : specialties) {
-            text.append("<code>").append(escape(specialty.code())).append("</code> <b>")
-                    .append(escape(specialty.name())).append("</b>\n");
-            if (hasDistinctProgram(specialty)) {
-                text.append("      ↳ <i>").append(escape(specialty.educationalProgram())).append("</i>\n");
+        // Групуємо за галузями знань: суцільний перелік із двох десятків позицій
+        // очима не сканується, потрібну спеціальність у ньому доводиться вишукувати.
+        for (Map.Entry<KnowledgeField, List<Specialty>> group : groupByField(specialties).entrySet()) {
+            KnowledgeField field = group.getKey();
+            text.append("\n").append(field.getEmoji()).append(" <b>")
+                    .append(field.getDisplayName().toUpperCase(UA)).append("</b>\n");
+            for (Specialty specialty : group.getValue()) {
+                text.append("   • <b>").append(escape(specialty.name())).append("</b> <code>")
+                        .append(escape(specialty.code())).append("</code>\n");
+                if (hasDistinctProgram(specialty)) {
+                    text.append("     ↳ <i>").append(escape(specialty.educationalProgram())).append("</i>\n");
+                }
             }
         }
 
@@ -53,24 +64,12 @@ public class CatalogMessageRenderer {
         if (range != null) {
             text.append("<i>Денна форма: ").append(range).append("</i>\n");
         }
-        text.append(DIVIDER).append("\n");
-
-        for (Specialty specialty : specialties) {
-            text.append("<b>").append(escape(specialty.name())).append("</b> <code>")
-                    .append(escape(specialty.code())).append("</code>\n");
-            // Кілька програм ділять один код (напр. три «Менеджмент D3»), тому без назви ОП
-            // рядки виглядали б однаково.
-            if (hasDistinctProgram(specialty)) {
-                text.append("      ↳ <i>").append(escape(specialty.educationalProgram())).append("</i>\n");
-            }
-            if (specialty.fullTimeTuition() == null && specialty.partTimeTuition() == null) {
-                text.append("      💵 Вартість: уточнюйте в приймальній комісії\n");
-            } else {
-                text.append("      💵 Денна: ").append(formatAmount(specialty.fullTimeTuition())).append("\n")
-                        .append("      📘 Заочна: ").append(formatPartTime(specialty.partTimeTuition())).append("\n");
-            }
-            if (specialty.tuitionNote() != null && !specialty.tuitionNote().isBlank()) {
-                text.append("      ℹ️ <i>").append(escape(specialty.tuitionNote())).append("</i>\n");
+        for (Map.Entry<KnowledgeField, List<Specialty>> group : groupByField(specialties).entrySet()) {
+            KnowledgeField field = group.getKey();
+            text.append("\n").append(field.getEmoji()).append(" <b>")
+                    .append(field.getDisplayName().toUpperCase(UA)).append("</b>\n");
+            for (Specialty specialty : group.getValue()) {
+                renderPriceEntry(text, specialty);
             }
         }
 
@@ -79,6 +78,38 @@ public class CatalogMessageRenderer {
                 .append("🎯 Перелік спеціальностей — /specialties\n")
                 .append("🔗 <a href=\"").append(sourceUrl(level)).append("\">Офіційний сайт УКД</a>");
         return text.toString();
+    }
+
+    private void renderPriceEntry(StringBuilder text, Specialty specialty) {
+        text.append("   • <b>").append(escape(specialty.name())).append("</b> <code>")
+                .append(escape(specialty.code())).append("</code>\n");
+        // Кілька програм ділять один код (напр. три «Менеджмент D3»), тому без назви ОП
+        // рядки виглядали б однаково.
+        if (hasDistinctProgram(specialty)) {
+            text.append("     ↳ <i>").append(escape(specialty.educationalProgram())).append("</i>\n");
+        }
+        if (specialty.fullTimeTuition() == null && specialty.partTimeTuition() == null) {
+            text.append("     💵 Вартість: уточнюйте в приймальній комісії\n");
+        } else {
+            text.append("     💵 Денна: ").append(formatAmount(specialty.fullTimeTuition())).append("\n")
+                    .append("     📘 Заочна: ").append(formatPartTime(specialty.partTimeTuition())).append("\n");
+        }
+        if (specialty.tuitionNote() != null && !specialty.tuitionNote().isBlank()) {
+            text.append("     ℹ️ <i>").append(escape(specialty.tuitionNote())).append("</i>\n");
+        }
+    }
+
+    /**
+     * Групи впорядковані за порядком оголошення {@link KnowledgeField}, тому ІТ і інженерія
+     * стоять першими — саме їх шукають найчастіше.
+     */
+    private Map<KnowledgeField, List<Specialty>> groupByField(List<Specialty> specialties) {
+        return specialties.stream()
+                .sorted(Comparator.comparing(Specialty::name, String.CASE_INSENSITIVE_ORDER)
+                        .thenComparing(specialty -> specialty.educationalProgram() == null
+                                ? "" : specialty.educationalProgram(), String.CASE_INSENSITIVE_ORDER))
+                .collect(Collectors.groupingBy(specialty -> KnowledgeField.fromCode(specialty.code()),
+                        TreeMap::new, Collectors.toList()));
     }
 
     public String renderAdminList(EducationLevel level) {

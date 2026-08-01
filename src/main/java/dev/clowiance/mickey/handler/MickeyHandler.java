@@ -12,17 +12,15 @@ import dev.clowiance.mickey.helper.KeyboardHelper;
 import dev.clowiance.mickey.helper.KeywordHelper;
 import dev.clowiance.mickey.helper.TextHelper;
 import dev.clowiance.mickey.handler.helper.MenuImageSender;
-import dev.clowiance.mickey.handler.helper.MenuMediaUpdater;
 import dev.clowiance.mickey.telegram.callback.CallbackContext;
 import dev.clowiance.mickey.telegram.callback.CallbackDispatcher;
 import dev.clowiance.mickey.telegram.callback.CallbackView;
+import dev.clowiance.mickey.telegram.menu.MenuMessenger;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.MaybeInaccessibleMessage;
@@ -32,7 +30,6 @@ import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -40,9 +37,6 @@ import java.util.Optional;
 @Component
 @RequiredArgsConstructor
 public class MickeyHandler extends TelegramLongPollingBot {
-
-    private static final int PHOTO_CAPTION_LIMIT = 1024;
-    private static final int MESSAGE_LIMIT = 4096;
 
     private final BotProperties botProperties;
     private final ChatMemberService chatMemberService;
@@ -55,7 +49,7 @@ public class MickeyHandler extends TelegramLongPollingBot {
     private final LogsCallbackService logsCallbackService;
     private final ActivityAuditService activityAuditService;
     private final MenuImageSender menuImageSender;
-    private final MenuMediaUpdater menuMediaUpdater;
+    private final MenuMessenger menuMessenger;
     private final CallbackDispatcher callbackDispatcher;
 
     @Override
@@ -203,42 +197,9 @@ public class MickeyHandler extends TelegramLongPollingBot {
         User user = callbackQuery.getFrom();
         MaybeInaccessibleMessage originalMessage = callbackQuery.getMessage();
 
-        if (originalMessage instanceof Message msg) {
-            if (msg.getChat() != null && !msg.getChat().isUserChat()) {
-                Message replyTo = msg.getReplyToMessage();
-                Long menuAuthorId = null;
-                if (replyTo != null && replyTo.getFrom() != null) {
-                    menuAuthorId = replyTo.getFrom().getId();
-                } else if (msg.getForwardFrom() != null) {
-                    menuAuthorId = msg.getForwardFrom().getId();
-                }
-
-                if (menuAuthorId != null) {
-                    boolean isDev = botProperties.getDevIds() != null && botProperties.getDevIds().contains(user.getId());
-                    if (!menuAuthorId.equals(user.getId()) && !isDev) {
-                        try {
-                            AnswerCallbackQuery answer = new AnswerCallbackQuery();
-                            answer.setCallbackQueryId(callbackQuery.getId());
-                            answer.setText("Цією кнопкою може користуватися лише той, хто викликав меню!");
-                            answer.setShowAlert(true);
-                            execute(answer);
-                        } catch (TelegramApiException ignored) {
-                        }
-                        return;
-                    }
-                }
-            }
-        }
-
-        try {
-            AnswerCallbackQuery answer = new AnswerCallbackQuery();
-            answer.setCallbackQueryId(callbackQuery.getId());
-            execute(answer);
-        } catch (TelegramApiException ignored) {
-        }
-
         String data = callbackQuery.getData();
         if (data != null && data.startsWith("R:")) {
+            answerCallback(callbackQuery.getId(), null);
             reportCommandService.handleCallback(this, callbackQuery, data);
             return;
         }
@@ -247,122 +208,77 @@ public class MickeyHandler extends TelegramLongPollingBot {
                 || data.startsWith("logs_confirm:")
                 || data.startsWith("logs_filter:")
                 || data.startsWith("logs_page:"))) {
+            answerCallback(callbackQuery.getId(), null);
             logsCallbackService.handleCallback(this, callbackQuery, data);
             return;
         }
 
         if (data != null && data.equals("welcome:member_number")) {
+            answerCallback(callbackQuery.getId(), null);
             return;
         }
 
-        if (originalMessage == null) {
+        if (originalMessage == null || data == null) {
+            answerCallback(callbackQuery.getId(), null);
             return;
         }
 
         Long chatId = originalMessage.getChatId();
         Integer messageId = originalMessage.getMessageId();
 
-        if (data != null) {
-            boolean developer = botProperties.getDevIds() != null && botProperties.getDevIds().contains(user.getId());
-            boolean chatAdmin = developer || permissionService.isUserChatAdmin(this, chatId, user.getId());
-            Optional<CallbackView> moduleView = callbackDispatcher.dispatch(
-                    new CallbackContext(data, chatId, user.getId(), developer, chatAdmin));
-            if (moduleView.isPresent()) {
-                CallbackView view = moduleView.get();
-                renderMenuView(originalMessage, chatId, messageId, view.text(),
-                        view.keyboard() != null ? view.keyboard() : keyboardHelper.backToMenu());
-                return;
-            }
-        }
-
-        String text;
-        var keyboard = keyboardHelper.backToMenu();
-
-        switch (data) {
-            case "menu:main" -> {
-                text = TextHelper.MENU_TITLE;
-                keyboard = keyboardHelper.mainMenu();
-            }
-            case "menu:faq" -> {
-                text = TextHelper.FAQ_MENU_HINT;
-                keyboard = keyboardHelper.faqMenu();
-            }
-            case "menu:help" -> text = TextHelper.HELP_TEXT;
-            case "faq:specialties" -> text = TextHelper.FAQ_SPECIALTIES;
-            case "faq:prices" -> text = TextHelper.FAQ_PRICES;
-            case "faq:dorms" -> text = TextHelper.FAQ_DORMS;
-            default -> text = TextHelper.MENU_TITLE;
-        }
-
-        renderMenuView(originalMessage, chatId, messageId, text, keyboard);
-    }
-
-    private void renderMenuView(MaybeInaccessibleMessage originalMessage, Long chatId, Integer messageId,
-                                String text, InlineKeyboardMarkup keyboard) {
-        boolean hasPhoto = originalMessage instanceof Message msg && msg.hasPhoto();
-        boolean hasText = originalMessage instanceof Message msg && msg.hasText() && msg.getText() != null && !msg.getText().isBlank();
-
-        // Підпис до фото в Telegram обмежений 1024 символами: довгі розділи (каталог, /help)
-        // показуємо окремим текстовим повідомленням, інакше кінець списку просто обрізається.
-        if (text != null && text.length() > PHOTO_CAPTION_LIMIT) {
-            deleteMessage(chatId, messageId);
-            sendLongMenuText(chatId, text, keyboard);
+        MenuSection section = resolveSection(data, chatId, user);
+        if (section == null) {
+            answerCallback(callbackQuery.getId(), null);
             return;
         }
 
-        if (hasPhoto) {
-            menuMediaUpdater.editToMenuPhoto(this, chatId, messageId, text, keyboard);
-        } else if (hasText) {
-            deleteMessage(chatId, messageId);
-            menuImageSender.sendMenuPhoto(this, chatId, text, keyboard);
-        } else {
-            menuImageSender.sendMenuPhoto(this, chatId, text, keyboard);
+        // Інлайн-клавіатура спільна для всього чату, тому чуже меню не перемальовуємо:
+        // тому, хто натиснув, відкриваємо власну копію розділу. Так кілька учасників
+        // можуть одночасно ходити по меню незалежно один від одного.
+        if (menuMessenger.isOwnedByOther(chatId, messageId, user.getId())) {
+            answerCallback(callbackQuery.getId(), "Відкрив це меню особисто для тебе 👇");
+            menuMessenger.sendMenu(this, chatId, user.getId(), section.text(), section.keyboard());
+            return;
         }
+
+        answerCallback(callbackQuery.getId(), null);
+        menuMessenger.updateMenu(this, originalMessage, chatId, messageId, user.getId(),
+                section.text(), section.keyboard());
     }
 
-    private void deleteMessage(Long chatId, Integer messageId) {
+    private MenuSection resolveSection(String data, Long chatId, User user) {
+        boolean developer = botProperties.getDevIds() != null && botProperties.getDevIds().contains(user.getId());
+        boolean chatAdmin = developer || permissionService.isUserChatAdmin(this, chatId, user.getId());
+        Optional<CallbackView> moduleView = callbackDispatcher.dispatch(
+                new CallbackContext(data, chatId, user.getId(), developer, chatAdmin));
+        if (moduleView.isPresent()) {
+            CallbackView view = moduleView.get();
+            return new MenuSection(view.text(),
+                    view.keyboard() != null ? view.keyboard() : keyboardHelper.backToMenu());
+        }
+
+        return switch (data) {
+            case "menu:main" -> new MenuSection(TextHelper.MENU_TITLE, keyboardHelper.mainMenu());
+            case "menu:faq" -> new MenuSection(TextHelper.FAQ_MENU_HINT, keyboardHelper.faqMenu());
+            case "menu:help" -> new MenuSection(TextHelper.HELP_TEXT, keyboardHelper.backToMenu());
+            case "faq:dorms" -> new MenuSection(TextHelper.FAQ_DORMS, keyboardHelper.backToFaq());
+            case "faq:admission" -> new MenuSection(TextHelper.FAQ_ADMISSION, keyboardHelper.backToFaq());
+            default -> null;
+        };
+    }
+
+    private void answerCallback(String callbackQueryId, String toast) {
         try {
-            DeleteMessage deleteMessage = new DeleteMessage();
-            deleteMessage.setChatId(chatId);
-            deleteMessage.setMessageId(messageId);
-            execute(deleteMessage);
-        } catch (Exception ignored) {
+            AnswerCallbackQuery answer = new AnswerCallbackQuery();
+            answer.setCallbackQueryId(callbackQueryId);
+            if (toast != null) {
+                answer.setText(toast);
+            }
+            execute(answer);
+        } catch (TelegramApiException ignored) {
         }
     }
 
-    /**
-     * Ділить текст на частини по межах рядків, щоб не впертися в ліміт повідомлення (4096),
-     * і чіпляє клавіатуру до останньої частини.
-     */
-    private void sendLongMenuText(Long chatId, String text, InlineKeyboardMarkup keyboard) {
-        List<String> chunks = new ArrayList<>();
-        StringBuilder chunk = new StringBuilder();
-        for (String line : text.split("\n", -1)) {
-            if (chunk.length() + line.length() + 1 > MESSAGE_LIMIT && chunk.length() > 0) {
-                chunks.add(chunk.toString());
-                chunk = new StringBuilder();
-            }
-            if (chunk.length() > 0) {
-                chunk.append("\n");
-            }
-            chunk.append(line);
-        }
-        chunks.add(chunk.toString());
-
-        for (int i = 0; i < chunks.size(); i++) {
-            SendMessage sendMessage = new SendMessage();
-            sendMessage.setChatId(chatId);
-            sendMessage.setParseMode("HTML");
-            sendMessage.disableWebPagePreview();
-            sendMessage.setText(chunks.get(i));
-            if (i == chunks.size() - 1 && keyboard != null) {
-                sendMessage.setReplyMarkup(keyboard);
-            }
-            try {
-                execute(sendMessage);
-            } catch (TelegramApiException e) {
-                log.error("Не вдалося надіслати розділ меню", e);
-            }
-        }
+    private record MenuSection(String text, InlineKeyboardMarkup keyboard) {
     }
 }

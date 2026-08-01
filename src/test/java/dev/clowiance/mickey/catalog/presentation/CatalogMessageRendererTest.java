@@ -83,6 +83,33 @@ class CatalogMessageRendererTest {
     }
 
     @Test
+    void groupsSpecialtiesByKnowledgeFieldWithItFirst() {
+        CatalogMessageRenderer renderer = rendererFor(EducationLevel.BACHELOR, bachelors());
+
+        String message = normalize(renderer.renderSpecialties(EducationLevel.BACHELOR));
+
+        assertThat(message).contains("ІНФОРМАЦІЙНІ ТЕХНОЛОГІЇ")
+                .contains("БІЗНЕС, УПРАВЛІННЯ ТА ПРАВО")
+                .contains("ОХОРОНА ЗДОРОВ'Я");
+        assertThat(message.indexOf("ІНФОРМАЦІЙНІ ТЕХНОЛОГІЇ"))
+                .as("ІТ має стояти першою групою")
+                .isLessThan(message.indexOf("БІЗНЕС, УПРАВЛІННЯ ТА ПРАВО"));
+        assertThat(message.indexOf("Інженерія програмного забезпечення"))
+                .as("ІПЗ має бути всередині групи ІТ")
+                .isGreaterThan(message.indexOf("ІНФОРМАЦІЙНІ ТЕХНОЛОГІЇ"));
+    }
+
+    @Test
+    void sortsSpecialtiesAlphabeticallyInsideGroup() {
+        CatalogMessageRenderer renderer = rendererFor(EducationLevel.BACHELOR, bachelors());
+
+        String message = normalize(renderer.renderSpecialties(EducationLevel.BACHELOR));
+
+        assertThat(message.indexOf("Маркетинг")).isLessThan(message.indexOf("Облік і оподаткування"));
+        assertThat(message.indexOf("Облік і оподаткування")).isLessThan(message.indexOf("Право</b>"));
+    }
+
+    @Test
     void keepsEveryCatalogViewWithinTelegramMessageLimit() {
         for (EducationLevel level : EducationLevel.values()) {
             List<Specialty> specialties = UkdCatalogData.entries().stream()
