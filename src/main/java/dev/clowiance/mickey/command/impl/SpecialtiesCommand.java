@@ -30,6 +30,11 @@ public class SpecialtiesCommand implements ICommand {
         return false;
     }
 
+    @Override
+    public boolean isInfoCommand() {
+        return true;
+    }
+
     private void send(TelegramLongPollingBot bot, Message message, String text, String action) {
         try {
             SendMessage response = new SendMessage();

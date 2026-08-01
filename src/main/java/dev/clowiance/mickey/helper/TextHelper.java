@@ -141,7 +141,7 @@ public final class TextHelper {
     public static final String NOT_ADMIN = "🔒 Ця команда доступна лише адміністраторам.";
     public static final String NOT_DEV = "🔒 Ця команда доступна лише розробникам бота.";
     public static final String GROUP_ONLY = "🔒 Ця команда доступна лише в групових чатах.";
-    public static final String PRIVATE_RESTRICTED = "🔒 У приватних повідомленнях доступні лише інформаційні команди: /start, /help, /faq, /menu.";
+    public static final String PRIVATE_RESTRICTED = "🔒 У приватних повідомленнях доступні лише інформаційні команди: /start, /menu, /help, /groups, /specialties, /prices.";
     public static final String TARGET_NOT_FOUND = "⚠️ Не вдалося визначити користувача. Вкажи @username, ID, або дай відповідь (reply) на його повідомлення.";
     public static final String TARGET_PROTECTED = "🛡️ Цього користувача не можна покарати: власники, адміністратори та розробники бота захищені від покарань.";
     public static final String INVALID_ID = "⚠️ Вкажи коректний ID користувача.";
@@ -236,6 +236,7 @@ public final class TextHelper {
 
             🎓 <b>КАТАЛОГ УКД ТА ПАНЕЛІ</b>
             • /menu - 📋 відкрити головне меню бота
+            • /groups - 👥 чати навчальних груп університету та коледжу
             • /specialties - 🎯 актуальний каталог спеціальностей УКД
             • /prices - 💰 офіційна вартість навчання за програмами
             • /adminpanel - 🛡️ панель адміністратора чату

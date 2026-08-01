@@ -15,6 +15,7 @@ public class KeyboardHelper {
         InlineKeyboardButton specialties = button("🎯 Спеціальності", "faq:specialties");
         InlineKeyboardButton prices = button("💰 Ціни", "faq:prices");
         InlineKeyboardButton admission = button("📝 Питання по вступу", "faq:admission");
+        InlineKeyboardButton groups = button("👥 Чати груп", "groups:menu");
         InlineKeyboardButton dorms = button("🏠 Гуртожиток", "faq:dorms");
         InlineKeyboardButton help = button("🤖 Команди", "menu:help");
 
@@ -22,7 +23,7 @@ public class KeyboardHelper {
                 .keyboardRow(List.of(help))
                 .keyboardRow(List.of(specialties, prices))
                 .keyboardRow(List.of(admission))
-                .keyboardRow(List.of(dorms))
+                .keyboardRow(List.of(groups, dorms))
                 .keyboardRow(List.of(faq))
                 .build();
     }
@@ -31,6 +32,7 @@ public class KeyboardHelper {
         InlineKeyboardButton specialties = button("🎯 Спеціальності", "faq:specialties");
         InlineKeyboardButton prices = button("💰 Ціни", "faq:prices");
         InlineKeyboardButton admission = button("📝 Питання по вступу", "faq:admission");
+        InlineKeyboardButton groups = button("👥 Чати навчальних груп", "groups:menu");
         InlineKeyboardButton dorms = button("🏠 Гуртожиток", "faq:dorms");
         InlineKeyboardButton back = button("⬅️ Назад", "menu:main");
 
@@ -38,6 +40,7 @@ public class KeyboardHelper {
                 .keyboardRow(List.of(specialties))
                 .keyboardRow(List.of(prices))
                 .keyboardRow(List.of(admission))
+                .keyboardRow(List.of(groups))
                 .keyboardRow(List.of(dorms))
                 .keyboardRow(List.of(back))
                 .build();

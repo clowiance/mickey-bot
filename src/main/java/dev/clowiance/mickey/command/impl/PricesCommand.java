@@ -37,4 +37,9 @@ public class PricesCommand implements ICommand {
     public boolean isAdminOnly() {
         return false;
     }
+
+    @Override
+    public boolean isInfoCommand() {
+        return true;
+    }
 }
