@@ -44,14 +44,26 @@ public class KeyboardHelper {
                 .build();
     }
 
+    public InlineKeyboardMarkup catalogLevelMenu(String action) {
+        return InlineKeyboardMarkup.builder()
+                .keyboardRow(List.of(
+                        button("🎓 Бакалаврат", "catalog:" + action + ":bachelor"),
+                        button("🎓 Магістратура", "catalog:" + action + ":master")))
+                .keyboardRow(List.of(button("⬅️ Назад", "menu:main")))
+                .build();
+    }
+
     public InlineKeyboardMarkup devPanel() {
         InlineKeyboardButton reports = button("📋 Всі репорти", "dev:reports");
         InlineKeyboardButton chats = button("💬 Чати", "dev:chats");
+        InlineKeyboardButton groups = button("🧩 Керовані групи", "dev:groups");
+        InlineKeyboardButton catalog = button("🎓 Каталог УКД", "dev:catalog");
         InlineKeyboardButton stats = button("📊 Статистика", "dev:stats");
         InlineKeyboardButton back = button("⬅️ Назад", "menu:main");
 
         return InlineKeyboardMarkup.builder()
                 .keyboardRow(List.of(reports, chats))
+                .keyboardRow(List.of(groups, catalog))
                 .keyboardRow(List.of(stats))
                 .keyboardRow(List.of(back))
                 .build();
@@ -60,11 +72,13 @@ public class KeyboardHelper {
     public InlineKeyboardMarkup adminPanel() {
         InlineKeyboardButton reports = button("📋 Репорти чату", "admin:reports");
         InlineKeyboardButton stats = button("📊 Статистика чату", "admin:stats");
+        InlineKeyboardButton settings = button("⚙️ Налаштування групи", "admin:settings");
         InlineKeyboardButton back = button("⬅️ Назад", "menu:main");
 
         return InlineKeyboardMarkup.builder()
                 .keyboardRow(List.of(reports))
                 .keyboardRow(List.of(stats))
+                .keyboardRow(List.of(settings))
                 .keyboardRow(List.of(back))
                 .build();
     }

@@ -1,5 +1,7 @@
 package dev.clowiance.mickey.service;
 
+import dev.clowiance.mickey.administration.application.ChatAdministrationService;
+import dev.clowiance.mickey.administration.domain.ChatFeature;
 import dev.clowiance.mickey.helper.TextHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,7 @@ public class UserCommandService {
 
     private final PollService pollService;
     private final BroadcastService broadcastService;
+    private final ChatAdministrationService chatAdministrationService;
 
     private static final DateTimeFormatter INPUT_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
@@ -49,6 +52,10 @@ public class UserCommandService {
     }
 
     public void handleSchedule(TelegramLongPollingBot bot, Message message, String argsText) {
+        if (!chatAdministrationService.isEnabled(message.getChatId(), ChatFeature.BROADCASTS)) {
+            reply(bot, message, "⛔ Розсилки вимкнені в налаштуваннях цієї групи.");
+            return;
+        }
         String[] parts = argsText.trim().split("\\s+", 3);
         if (parts.length < 3) {
             reply(bot, message, TextHelper.BROADCAST_HELP);

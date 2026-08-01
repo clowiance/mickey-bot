@@ -24,6 +24,7 @@ public class PunishmentLog {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private Long chatId;
     private Long userId;
     private String username;
     private String type;

@@ -7,5 +7,5 @@ import java.util.List;
 
 public interface PunishmentLogRepository extends JpaRepository<PunishmentLog, Long> {
 
-    List<PunishmentLog> findByUserIdOrderByCreatedAtDesc(Long userId);
+    List<PunishmentLog> findByChatIdAndUserIdOrderByCreatedAtDesc(Long chatId, Long userId);
 }

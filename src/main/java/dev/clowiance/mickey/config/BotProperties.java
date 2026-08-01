@@ -13,7 +13,6 @@ public class BotProperties {
     private String username;
     private String token;
     private List<Long> devIds;
-    private String targetGroupUsername;
 
     public void setDevIds(String devIds) {
         if (devIds != null && !devIds.isBlank()) {

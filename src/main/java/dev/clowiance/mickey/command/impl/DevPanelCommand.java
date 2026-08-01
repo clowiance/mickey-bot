@@ -1,5 +1,6 @@
 package dev.clowiance.mickey.command.impl;
 
+import dev.clowiance.mickey.command.CommandAccess;
 import dev.clowiance.mickey.command.ICommand;
 import dev.clowiance.mickey.helper.KeyboardHelper;
 import dev.clowiance.mickey.helper.TextHelper;
@@ -24,6 +25,11 @@ public class DevPanelCommand implements ICommand {
     @Override
     public boolean isAdminOnly() {
         return true;
+    }
+
+    @Override
+    public CommandAccess getAccessLevel() {
+        return CommandAccess.DEVELOPER;
     }
 
     @Override

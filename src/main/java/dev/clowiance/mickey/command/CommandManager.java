@@ -21,12 +21,13 @@ public class CommandManager {
         }
     }
 
-    public void process(String command, TelegramLongPollingBot bot, Message message, String args, boolean isAdmin) {
+    public void process(String command, TelegramLongPollingBot bot, Message message, String args,
+                        CommandAuthorization authorization) {
         ICommand cmd = commands.get(command);
         if (cmd == null) {
             return;
         }
-        if (cmd.isAdminOnly() && !isAdmin) {
+        if (!authorization.allows(cmd.getAccessLevel())) {
             sendNotAdmin(bot, message);
             return;
         }

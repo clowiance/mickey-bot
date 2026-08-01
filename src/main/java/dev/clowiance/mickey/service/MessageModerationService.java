@@ -2,6 +2,7 @@ package dev.clowiance.mickey.service;
 
 import dev.clowiance.mickey.helper.ContentHelper;
 import dev.clowiance.mickey.helper.TextHelper;
+import dev.clowiance.mickey.moderation.application.GroupMemberService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -16,7 +17,7 @@ import java.time.LocalDateTime;
 public class MessageModerationService {
 
     private final ContentHelper contentHelper;
-    private final ChatMemberService chatMemberService;
+    private final GroupMemberService groupMemberService;
     private final ModerationService moderationService;
     private final PunishmentService punishmentService;
 
@@ -50,8 +51,9 @@ public class MessageModerationService {
 
         moderationService.deleteMessage(bot, chatId, message.getMessageId());
 
-        int warns = chatMemberService.addWarn(userId);
-        punishmentService.log(userId, message.getFrom().getUserName(), "WARN", reasonType, null);
+        int warns = groupMemberService.addWarn(chatId, userId,
+                message.getFrom().getUserName(), message.getFrom().getFirstName());
+        punishmentService.log(chatId, userId, message.getFrom().getUserName(), "WARN", reasonType, null);
 
         try {
             SendMessage notice = new SendMessage();
@@ -65,8 +67,8 @@ public class MessageModerationService {
 
         if (warns >= 3) {
             moderationService.banUser(bot, chatId, userId);
-            chatMemberService.setBanned(userId, true);
-            punishmentService.log(userId, message.getFrom().getUserName(), "AUTO_BAN", "3 попередження", null);
+            groupMemberService.setBanned(chatId, userId, true);
+            punishmentService.log(chatId, userId, message.getFrom().getUserName(), "AUTO_BAN", "3 попередження", null);
             try {
                 SendMessage banNotice = new SendMessage();
                 banNotice.setChatId(chatId);
@@ -77,8 +79,8 @@ public class MessageModerationService {
             }
         } else if (warns == 2) {
             moderationService.muteUser(bot, chatId, userId, 30);
-            chatMemberService.setMuted(userId, true, LocalDateTime.now().plusMinutes(30));
-            punishmentService.log(userId, message.getFrom().getUserName(), "AUTO_MUTE", "2 попередження", null);
+            groupMemberService.setMuted(chatId, userId, true, LocalDateTime.now().plusMinutes(30));
+            punishmentService.log(chatId, userId, message.getFrom().getUserName(), "AUTO_MUTE", "2 попередження", null);
             try {
                 SendMessage muteNotice = new SendMessage();
                 muteNotice.setChatId(chatId);

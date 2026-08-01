@@ -1,25 +1,30 @@
 package dev.clowiance.mickey.handler;
 
+import dev.clowiance.mickey.administration.application.ChatAdministrationService;
+import dev.clowiance.mickey.administration.domain.ChatFeature;
+import dev.clowiance.mickey.administration.presentation.WelcomeMessageRenderer;
+import dev.clowiance.mickey.command.CommandAuthorization;
 import dev.clowiance.mickey.command.CommandManager;
 import dev.clowiance.mickey.config.BotProperties;
 import dev.clowiance.mickey.entity.ChatInfo;
+import dev.clowiance.mickey.moderation.application.GroupMemberService;
 import dev.clowiance.mickey.service.PermissionService;
-import dev.clowiance.mickey.service.ChatMemberService;
 import dev.clowiance.mickey.service.MessageModerationService;
 import dev.clowiance.mickey.service.ReportService;
 import dev.clowiance.mickey.helper.KeyboardHelper;
 import dev.clowiance.mickey.helper.KeywordHelper;
 import dev.clowiance.mickey.helper.TextHelper;
+import dev.clowiance.mickey.telegram.callback.CallbackContext;
+import dev.clowiance.mickey.telegram.callback.CallbackDispatcher;
+import dev.clowiance.mickey.telegram.callback.CallbackView;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
-import org.telegram.telegrambots.meta.api.methods.groupadministration.GetChat;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
-import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
@@ -34,13 +39,16 @@ import java.util.Optional;
 public class MickeyHandler extends TelegramLongPollingBot {
 
     private final BotProperties botProperties;
-    private final ChatMemberService chatMemberService;
+    private final GroupMemberService groupMemberService;
     private final MessageModerationService messageModerationService;
     private final CommandManager commandManager;
     private final KeywordHelper keywordHelper;
     private final KeyboardHelper keyboardHelper;
     private final PermissionService permissionService;
     private final ReportService reportService;
+    private final ChatAdministrationService chatAdministrationService;
+    private final WelcomeMessageRenderer welcomeMessageRenderer;
+    private final CallbackDispatcher callbackDispatcher;
 
     @Override
     public String getBotUsername() {
@@ -80,18 +88,22 @@ public class MickeyHandler extends TelegramLongPollingBot {
     private void handleNewMembers(Message message) {
         Long chatId = message.getChatId();
         permissionService.ensureChatRecorded(chatId);
+        var chatSettings = chatAdministrationService.ensureChat(chatId,
+                message.getChat().getTitle(), message.getChat().getUserName());
         boolean botAdded = false;
         for (User newMember : message.getNewChatMembers()) {
             if (Boolean.TRUE.equals(newMember.getIsBot()) && newMember.getUserName() != null
                     && newMember.getUserName().equalsIgnoreCase(getBotUsername())) {
                 botAdded = true;
             } else if (!Boolean.TRUE.equals(newMember.getIsBot())) {
-                chatMemberService.getOrCreate(newMember);
-                String name = newMember.getUserName() != null ? "@" + newMember.getUserName() : newMember.getFirstName();
-                String welcomeText = isTargetGroup(chatId)
-                        ? TextHelper.WELCOME_ABITURIENT
-                        : TextHelper.WELCOME_STUDENT;
-                sendHtml(chatId, String.format(welcomeText, name), null);
+                groupMemberService.register(chatId, newMember.getId(),
+                        newMember.getUserName(), newMember.getFirstName());
+                if (chatSettings.welcomeEnabled()) {
+                    String name = newMember.getUserName() != null
+                            ? "@" + newMember.getUserName()
+                            : newMember.getFirstName();
+                    sendHtml(chatId, welcomeMessageRenderer.render(chatSettings, name), null);
+                }
             }
         }
         if (botAdded) {
@@ -107,6 +119,7 @@ public class MickeyHandler extends TelegramLongPollingBot {
     private void handleText(Message message) {
         Long chatId = message.getChatId();
         permissionService.ensureChatRecorded(chatId);
+        chatAdministrationService.ensureChat(chatId, message.getChat().getTitle(), message.getChat().getUserName());
         boolean isAdmin = permissionService.isBotAdmin(this, chatId);
         if (!isAdmin) {
             if (permissionService.shouldWarn(chatId)) {
@@ -122,18 +135,20 @@ public class MickeyHandler extends TelegramLongPollingBot {
 
         String text = message.getText().trim();
         User from = message.getFrom();
-        chatMemberService.touch(from);
+        groupMemberService.touch(chatId, from.getId(), from.getUserName(), from.getFirstName());
 
         if (text.startsWith("/")) {
             String[] tokens = text.split("\\s+", 2);
             String command = tokens[0].split("@")[0].toLowerCase();
             String args = tokens.length > 1 ? tokens[1] : "";
             boolean isDev = botProperties.getDevIds() != null && botProperties.getDevIds().contains(from.getId());
-            commandManager.process(command, this, message, args, isDev);
+            boolean isChatAdmin = permissionService.isChatAdmin(this, chatId, from.getId());
+            commandManager.process(command, this, message, args,
+                    new CommandAuthorization(isDev, isChatAdmin));
             return;
         }
 
-        if (messageIsNew) {
+        if (messageIsNew && chatAdministrationService.isEnabled(chatId, ChatFeature.MODERATION)) {
             boolean moderated = messageModerationService.moderate(this, message);
             if (moderated) {
                 return;
@@ -147,10 +162,17 @@ public class MickeyHandler extends TelegramLongPollingBot {
     private void handleCallback(CallbackQuery callbackQuery) {
         String data = callbackQuery.getData();
         Long chatId = callbackQuery.getMessage().getChatId();
-        Integer messageId = callbackQuery.getMessage().getMessageId();
         Long userId = callbackQuery.getFrom().getId();
         boolean isDev = botProperties.getDevIds() != null && botProperties.getDevIds().contains(userId);
         boolean isChatAdmin = permissionService.isChatAdmin(this, chatId, userId);
+        chatAdministrationService.ensureChat(chatId, null, null);
+
+        Optional<CallbackView> dynamicView = callbackDispatcher.dispatch(
+                new CallbackContext(data, chatId, userId, isDev, isChatAdmin));
+        if (dynamicView.isPresent()) {
+            editCallbackMessage(callbackQuery, dynamicView.get().text(), dynamicView.get().keyboard());
+            return;
+        }
 
         String text;
         var keyboard = keyboardHelper.backToMenu();
@@ -165,8 +187,6 @@ public class MickeyHandler extends TelegramLongPollingBot {
                 keyboard = keyboardHelper.faqMenu();
             }
             case "menu:help" -> text = TextHelper.HELP_TEXT;
-            case "faq:specialties" -> text = TextHelper.FAQ_SPECIALTIES;
-            case "faq:prices" -> text = TextHelper.FAQ_PRICES;
             case "faq:dorms" -> text = TextHelper.FAQ_DORMS;
             case "dev:panel" -> {
                 if (!isDev) {
@@ -210,17 +230,17 @@ public class MickeyHandler extends TelegramLongPollingBot {
                 }
                 keyboard = null;
             }
-            case "dev:stats", "admin:stats" -> {
-                text = "📊 Статистика буде тут.";
-                keyboard = null;
-            }
             default -> text = TextHelper.MENU_TITLE;
         }
 
+        editCallbackMessage(callbackQuery, text, keyboard);
+    }
+
+    private void editCallbackMessage(CallbackQuery callbackQuery, String text, InlineKeyboardMarkup keyboard) {
         try {
             EditMessageText edit = new EditMessageText();
-            edit.setChatId(chatId);
-            edit.setMessageId(messageId);
+            edit.setChatId(callbackQuery.getMessage().getChatId());
+            edit.setMessageId(callbackQuery.getMessage().getMessageId());
             edit.setText(text);
             edit.setParseMode("HTML");
             if (keyboard != null) {
@@ -233,21 +253,6 @@ public class MickeyHandler extends TelegramLongPollingBot {
             execute(answer);
         } catch (TelegramApiException e) {
             log.error("колбек викаблучується", e);
-        }
-    }
-
-    private boolean isTargetGroup(Long chatId) {
-        String target = botProperties.getTargetGroupUsername();
-        if (target == null || target.isBlank()) {
-            return false;
-        }
-        try {
-            GetChat getChat = new GetChat();
-            getChat.setChatId(chatId);
-            Chat chatResult = execute(getChat);
-            return chatResult.getUserName() != null && chatResult.getUserName().equalsIgnoreCase(target);
-        } catch (TelegramApiException e) {
-            return false;
         }
     }
 
