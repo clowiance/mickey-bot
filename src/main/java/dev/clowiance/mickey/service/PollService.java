@@ -42,7 +42,7 @@ public class PollService {
             }
             return true;
         } catch (TelegramApiException e) {
-            log.error("сьогодні не без опитувань", e);
+            log.error("сьогодні без опитувань", e);
             return false;
         }
     }

@@ -22,7 +22,6 @@ public class ChatInfo {
     private Long chatId;
 
     private Boolean adminOk;
-    private Long botJoinedAt;
 
     private LocalDateTime lastWarningAt;
 }

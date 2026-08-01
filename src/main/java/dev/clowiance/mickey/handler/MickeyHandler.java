@@ -1,19 +1,18 @@
 package dev.clowiance.mickey.handler;
 
-import dev.clowiance.mickey.administration.application.ChatAdministrationService;
-import dev.clowiance.mickey.administration.domain.ChatFeature;
-import dev.clowiance.mickey.administration.presentation.WelcomeMessageRenderer;
-import dev.clowiance.mickey.command.CommandAuthorization;
 import dev.clowiance.mickey.command.CommandManager;
 import dev.clowiance.mickey.config.BotProperties;
-import dev.clowiance.mickey.entity.ChatInfo;
-import dev.clowiance.mickey.moderation.application.GroupMemberService;
+import dev.clowiance.mickey.service.ActivityAuditService;
 import dev.clowiance.mickey.service.PermissionService;
-import dev.clowiance.mickey.service.MessageModerationService;
-import dev.clowiance.mickey.service.ReportService;
+import dev.clowiance.mickey.service.ChatMemberService;
+import dev.clowiance.mickey.service.LogsCallbackService;
+import dev.clowiance.mickey.service.MessageService;
+import dev.clowiance.mickey.service.ReportCommandService;
 import dev.clowiance.mickey.helper.KeyboardHelper;
 import dev.clowiance.mickey.helper.KeywordHelper;
 import dev.clowiance.mickey.helper.TextHelper;
+import dev.clowiance.mickey.handler.helper.MenuImageSender;
+import dev.clowiance.mickey.handler.helper.MenuMediaUpdater;
 import dev.clowiance.mickey.telegram.callback.CallbackContext;
 import dev.clowiance.mickey.telegram.callback.CallbackDispatcher;
 import dev.clowiance.mickey.telegram.callback.CallbackView;
@@ -22,15 +21,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
+import org.telegram.telegrambots.meta.api.objects.Chat;
+import org.telegram.telegrambots.meta.api.objects.MaybeInaccessibleMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.util.List;
 import java.util.Optional;
 
 @Slf4j
@@ -39,15 +39,17 @@ import java.util.Optional;
 public class MickeyHandler extends TelegramLongPollingBot {
 
     private final BotProperties botProperties;
-    private final GroupMemberService groupMemberService;
-    private final MessageModerationService messageModerationService;
+    private final ChatMemberService chatMemberService;
+    private final MessageService messageService;
     private final CommandManager commandManager;
     private final KeywordHelper keywordHelper;
     private final KeyboardHelper keyboardHelper;
     private final PermissionService permissionService;
-    private final ReportService reportService;
-    private final ChatAdministrationService chatAdministrationService;
-    private final WelcomeMessageRenderer welcomeMessageRenderer;
+    private final ReportCommandService reportCommandService;
+    private final LogsCallbackService logsCallbackService;
+    private final ActivityAuditService activityAuditService;
+    private final MenuImageSender menuImageSender;
+    private final MenuMediaUpdater menuMediaUpdater;
     private final CallbackDispatcher callbackDispatcher;
 
     @Override
@@ -78,100 +80,193 @@ public class MickeyHandler extends TelegramLongPollingBot {
             }
 
             if (message.hasText()) {
-                handleText(message);
+                if (message.getChat() != null && message.getChat().isUserChat()) {
+                    handlePrivateText(message);
+                } else {
+                    handleGroupText(message);
+                }
             }
         } catch (Exception e) {
             log.error("обробка оновлення успішно провалилась", e);
         }
     }
 
-    private void handleNewMembers(Message message) {
-        Long chatId = message.getChatId();
-        permissionService.ensureChatRecorded(chatId);
-        var chatSettings = chatAdministrationService.ensureChat(chatId,
-                message.getChat().getTitle(), message.getChat().getUserName());
-        boolean botAdded = false;
-        for (User newMember : message.getNewChatMembers()) {
-            if (Boolean.TRUE.equals(newMember.getIsBot()) && newMember.getUserName() != null
-                    && newMember.getUserName().equalsIgnoreCase(getBotUsername())) {
-                botAdded = true;
-            } else if (!Boolean.TRUE.equals(newMember.getIsBot())) {
-                groupMemberService.register(chatId, newMember.getId(),
-                        newMember.getUserName(), newMember.getFirstName());
-                if (chatSettings.welcomeEnabled()) {
-                    String name = newMember.getUserName() != null
-                            ? "@" + newMember.getUserName()
-                            : newMember.getFirstName();
-                    sendHtml(chatId, welcomeMessageRenderer.render(chatSettings, name), null);
-                }
-            }
-        }
-        if (botAdded) {
-            permissionService.recordBotJoin(chatId, message.getDate());
-            boolean isAdmin = permissionService.isBotAdmin(this, chatId);
-            permissionService.updateAdminStatus(chatId, isAdmin);
-            if (!isAdmin) {
-                sendHtml(chatId, TextHelper.ADMIN_REQUIRED, null);
+    @Override
+    public void onUpdatesReceived(List<Update> updates) {
+        for (Update update : updates) {
+            try {
+                onUpdateReceived(update);
+            } catch (Exception e) {
+                log.error("Помилка обробки оновлення", e);
             }
         }
     }
 
-    private void handleText(Message message) {
+    private void handleNewMembers(Message message) {
         Long chatId = message.getChatId();
         permissionService.ensureChatRecorded(chatId);
-        chatAdministrationService.ensureChat(chatId, message.getChat().getTitle(), message.getChat().getUserName());
-        boolean isAdmin = permissionService.isBotAdmin(this, chatId);
-        if (!isAdmin) {
-            if (permissionService.shouldWarn(chatId)) {
-                sendHtml(chatId, TextHelper.ADMIN_REQUIRED, null);
-                permissionService.updateWarningTime(chatId);
-            }
+
+        boolean botAdded = message.getNewChatMembers().stream().anyMatch(member ->
+                Boolean.TRUE.equals(member.getIsBot()) && member.getUserName() != null
+                        && member.getUserName().equalsIgnoreCase(getBotUsername()));
+
+        if (botAdded) {
+            menuImageSender.sendMenuPhoto(this, chatId, TextHelper.BOT_ADDED_GREETING, null);
+            permissionService.validateBotPermissions(this, chatId);
             return;
         }
 
-        ChatInfo chatInfo = permissionService.getChatInfo(chatId);
-        boolean messageIsNew = chatInfo == null || chatInfo.getBotJoinedAt() == null
-                || message.getDate() >= chatInfo.getBotJoinedAt();
+        if (!permissionService.validateBotPermissions(this, chatId)) {
+            return;
+        }
+
+        Chat chat = message.getChat();
+        boolean isTargetGroup = botProperties.getTargetGroupUsername() != null
+                && !botProperties.getTargetGroupUsername().isBlank()
+                && chat.getUserName() != null
+                && chat.getUserName().equalsIgnoreCase(botProperties.getTargetGroupUsername());
+        String welcomeTemplate = isTargetGroup ? TextHelper.WELCOME_ABITURIENT : TextHelper.WELCOME_STUDENT;
+
+        for (User newMember : message.getNewChatMembers()) {
+            if (Boolean.TRUE.equals(newMember.getIsBot())) {
+                continue;
+            }
+            chatMemberService.getOrCreate(newMember);
+            long memberCount = chatMemberService.countTotalMembers();
+            String name = newMember.getUserName() != null ? "@" + newMember.getUserName() : newMember.getFirstName();
+            activityAuditService.logActivity(chatId, newMember.getId(), newMember.getUserName(), "MESSAGE", "JOIN",
+                    "Приєднався до чату | Учасник #" + memberCount);
+            menuImageSender.sendMenuPhoto(this, chatId, String.format(welcomeTemplate, name), keyboardHelper.welcomeMemberNumber(memberCount));
+        }
+    }
+
+    private void handlePrivateText(Message message) {
+        String text = message.getText().trim();
+        User from = message.getFrom();
+        if (from == null) {
+            return;
+        }
+        chatMemberService.touch(from);
+
+        if (!text.startsWith("/")) {
+            return;
+        }
+
+        String[] tokens = text.split("\\s+", 2);
+        String command = tokens[0].split("@")[0].toLowerCase();
+        String args = tokens.length > 1 ? tokens[1] : "";
+        boolean isDev = botProperties.getDevIds() != null && botProperties.getDevIds().contains(from.getId());
+        commandManager.processPrivate(command, this, message, args, isDev);
+    }
+
+    private void handleGroupText(Message message) {
+        Long chatId = message.getChatId();
+        permissionService.ensureChatRecorded(chatId);
+
+        if (!permissionService.validateBotPermissions(this, chatId)) {
+            return;
+        }
 
         String text = message.getText().trim();
         User from = message.getFrom();
-        groupMemberService.touch(chatId, from.getId(), from.getUserName(), from.getFirstName());
+        if (from == null) {
+            return;
+        }
+        chatMemberService.touch(from);
 
         if (text.startsWith("/")) {
             String[] tokens = text.split("\\s+", 2);
             String command = tokens[0].split("@")[0].toLowerCase();
             String args = tokens.length > 1 ? tokens[1] : "";
             boolean isDev = botProperties.getDevIds() != null && botProperties.getDevIds().contains(from.getId());
-            boolean isChatAdmin = permissionService.isChatAdmin(this, chatId, from.getId());
-            commandManager.process(command, this, message, args,
-                    new CommandAuthorization(isDev, isChatAdmin));
+            boolean isChatAdmin = isDev || permissionService.isUserChatAdmin(this, chatId, from.getId());
+            commandManager.process(command, this, message, args, isChatAdmin, isDev);
             return;
         }
 
-        if (messageIsNew && chatAdministrationService.isEnabled(chatId, ChatFeature.MODERATION)) {
-            boolean moderated = messageModerationService.moderate(this, message);
-            if (moderated) {
-                return;
-            }
+        boolean moderated = messageService.moderate(this, message);
+        if (moderated) {
+            return;
         }
 
         Optional<String> keywordResponse = keywordHelper.findResponse(text);
-        keywordResponse.ifPresent(response -> sendHtml(chatId, response, keyboardHelper.backToMenu()));
+        keywordResponse.ifPresent(response -> menuImageSender.sendMenuPhoto(this, chatId, response, keyboardHelper.backToMenu()));
     }
 
     private void handleCallback(CallbackQuery callbackQuery) {
-        String data = callbackQuery.getData();
-        Long chatId = callbackQuery.getMessage().getChatId();
-        Long userId = callbackQuery.getFrom().getId();
-        boolean isDev = botProperties.getDevIds() != null && botProperties.getDevIds().contains(userId);
-        boolean isChatAdmin = permissionService.isChatAdmin(this, chatId, userId);
-        chatAdministrationService.ensureChat(chatId, null, null);
+        User user = callbackQuery.getFrom();
+        MaybeInaccessibleMessage originalMessage = callbackQuery.getMessage();
 
-        Optional<CallbackView> dynamicView = callbackDispatcher.dispatch(
-                new CallbackContext(data, chatId, userId, isDev, isChatAdmin));
-        if (dynamicView.isPresent()) {
-            editCallbackMessage(callbackQuery, dynamicView.get().text(), dynamicView.get().keyboard());
+        if (originalMessage instanceof Message msg) {
+            if (msg.getChat() != null && !msg.getChat().isUserChat()) {
+                Message replyTo = msg.getReplyToMessage();
+                Long menuAuthorId = null;
+                if (replyTo != null && replyTo.getFrom() != null) {
+                    menuAuthorId = replyTo.getFrom().getId();
+                } else if (msg.getForwardFrom() != null) {
+                    menuAuthorId = msg.getForwardFrom().getId();
+                }
+
+                if (menuAuthorId != null) {
+                    boolean isDev = botProperties.getDevIds() != null && botProperties.getDevIds().contains(user.getId());
+                    if (!menuAuthorId.equals(user.getId()) && !isDev) {
+                        try {
+                            AnswerCallbackQuery answer = new AnswerCallbackQuery();
+                            answer.setCallbackQueryId(callbackQuery.getId());
+                            answer.setText("Цією кнопкою може користуватися лише той, хто викликав меню!");
+                            answer.setShowAlert(true);
+                            execute(answer);
+                        } catch (TelegramApiException ignored) {
+                        }
+                        return;
+                    }
+                }
+            }
+        }
+
+        try {
+            AnswerCallbackQuery answer = new AnswerCallbackQuery();
+            answer.setCallbackQueryId(callbackQuery.getId());
+            execute(answer);
+        } catch (TelegramApiException ignored) {
+        }
+
+        String data = callbackQuery.getData();
+        if (data != null && data.startsWith("R:")) {
+            reportCommandService.handleCallback(this, callbackQuery, data);
             return;
+        }
+
+        if (data != null && (data.equals("logs_close")
+                || data.startsWith("logs_confirm:")
+                || data.startsWith("logs_filter:")
+                || data.startsWith("logs_page:"))) {
+            logsCallbackService.handleCallback(this, callbackQuery, data);
+            return;
+        }
+
+        if (data != null && data.equals("welcome:member_number")) {
+            return;
+        }
+
+        if (originalMessage == null) {
+            return;
+        }
+
+        Long chatId = originalMessage.getChatId();
+        Integer messageId = originalMessage.getMessageId();
+
+        if (data != null) {
+            boolean developer = botProperties.getDevIds() != null && botProperties.getDevIds().contains(user.getId());
+            boolean chatAdmin = developer || permissionService.isUserChatAdmin(this, chatId, user.getId());
+            Optional<CallbackView> moduleView = callbackDispatcher.dispatch(
+                    new CallbackContext(data, chatId, user.getId(), developer, chatAdmin));
+            if (moduleView.isPresent()) {
+                CallbackView view = moduleView.get();
+                renderMenuView(originalMessage, chatId, messageId, view.text(),
+                        view.keyboard() != null ? view.keyboard() : keyboardHelper.backToMenu());
+                return;
+            }
         }
 
         String text;
@@ -187,87 +282,33 @@ public class MickeyHandler extends TelegramLongPollingBot {
                 keyboard = keyboardHelper.faqMenu();
             }
             case "menu:help" -> text = TextHelper.HELP_TEXT;
+            case "faq:specialties" -> text = TextHelper.FAQ_SPECIALTIES;
+            case "faq:prices" -> text = TextHelper.FAQ_PRICES;
             case "faq:dorms" -> text = TextHelper.FAQ_DORMS;
-            case "dev:panel" -> {
-                if (!isDev) {
-                    text = TextHelper.NOT_ADMIN;
-                    keyboard = null;
-                } else {
-                    text = TextHelper.DEV_PANEL_TITLE;
-                    keyboard = keyboardHelper.devPanel();
-                }
-            }
-            case "admin:panel" -> {
-                if (!isDev && !isChatAdmin) {
-                    text = TextHelper.NOT_ADMIN;
-                    keyboard = null;
-                } else {
-                    text = TextHelper.ADMIN_PANEL_TITLE;
-                    keyboard = keyboardHelper.adminPanel();
-                }
-            }
-            case "dev:reports" -> {
-                if (!isDev) {
-                    text = TextHelper.NOT_ADMIN;
-                } else {
-                    text = reportService.formatAllPendingReports();
-                }
-                keyboard = null;
-            }
-            case "admin:reports" -> {
-                if (!isDev && !isChatAdmin) {
-                    text = TextHelper.NOT_ADMIN;
-                } else {
-                    text = reportService.formatChatPendingReports(chatId);
-                }
-                keyboard = null;
-            }
-            case "dev:chats" -> {
-                if (!isDev) {
-                    text = TextHelper.NOT_ADMIN;
-                } else {
-                    text = permissionService.formatChatsList();
-                }
-                keyboard = null;
-            }
             default -> text = TextHelper.MENU_TITLE;
         }
 
-        editCallbackMessage(callbackQuery, text, keyboard);
+        renderMenuView(originalMessage, chatId, messageId, text, keyboard);
     }
 
-    private void editCallbackMessage(CallbackQuery callbackQuery, String text, InlineKeyboardMarkup keyboard) {
-        try {
-            EditMessageText edit = new EditMessageText();
-            edit.setChatId(callbackQuery.getMessage().getChatId());
-            edit.setMessageId(callbackQuery.getMessage().getMessageId());
-            edit.setText(text);
-            edit.setParseMode("HTML");
-            if (keyboard != null) {
-                edit.setReplyMarkup(keyboard);
-            }
-            execute(edit);
+    private void renderMenuView(MaybeInaccessibleMessage originalMessage, Long chatId, Integer messageId,
+                                String text, org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup keyboard) {
+        boolean hasPhoto = originalMessage instanceof Message msg && msg.hasPhoto();
+        boolean hasText = originalMessage instanceof Message msg && msg.hasText() && msg.getText() != null && !msg.getText().isBlank();
 
-            AnswerCallbackQuery answer = new AnswerCallbackQuery();
-            answer.setCallbackQueryId(callbackQuery.getId());
-            execute(answer);
-        } catch (TelegramApiException e) {
-            log.error("колбек викаблучується", e);
-        }
-    }
-
-    private void sendHtml(Long chatId, String text, InlineKeyboardMarkup keyboard) {
-        try {
-            SendMessage sendMessage = new SendMessage();
-            sendMessage.setChatId(chatId);
-            sendMessage.setText(text);
-            sendMessage.setParseMode("HTML");
-            if (keyboard != null) {
-                sendMessage.setReplyMarkup(keyboard);
+        if (hasPhoto) {
+            menuMediaUpdater.editToMenuPhoto(this, chatId, messageId, text, keyboard);
+        } else if (hasText) {
+            try {
+                DeleteMessage deleteMessage = new DeleteMessage();
+                deleteMessage.setChatId(chatId);
+                deleteMessage.setMessageId(messageId);
+                execute(deleteMessage);
+            } catch (Exception ignored) {
             }
-            execute(sendMessage);
-        } catch (TelegramApiException e) {
-            log.error("меседж хес нот бін сент", e);
+            menuImageSender.sendMenuPhoto(this, chatId, text, keyboard);
+        } else {
+            menuImageSender.sendMenuPhoto(this, chatId, text, keyboard);
         }
     }
 }

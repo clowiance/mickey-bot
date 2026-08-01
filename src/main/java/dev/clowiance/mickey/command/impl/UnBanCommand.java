@@ -24,7 +24,12 @@ public class UnBanCommand implements ICommand {
     }
 
     @Override
+    public boolean isGroupOnly() {
+        return true;
+    }
+
+    @Override
     public void execute(TelegramLongPollingBot bot, Message message, String args) {
-        adminCommandService.handleUnban(bot, message, args);
+        adminCommandService.handleUnBan(bot, message, args);
     }
 }

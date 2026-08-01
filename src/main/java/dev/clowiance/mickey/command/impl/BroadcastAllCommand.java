@@ -1,7 +1,6 @@
 package dev.clowiance.mickey.command.impl;
 
 import dev.clowiance.mickey.administration.application.GroupBroadcastService;
-import dev.clowiance.mickey.command.CommandAccess;
 import dev.clowiance.mickey.command.ICommand;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -50,8 +49,8 @@ public class BroadcastAllCommand implements ICommand {
     }
 
     @Override
-    public CommandAccess getAccessLevel() {
-        return CommandAccess.DEVELOPER;
+    public boolean isDevOnly() {
+        return true;
     }
 
     private String help() {

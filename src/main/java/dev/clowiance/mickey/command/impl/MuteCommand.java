@@ -24,6 +24,11 @@ public class MuteCommand implements ICommand {
     }
 
     @Override
+    public boolean isGroupOnly() {
+        return true;
+    }
+
+    @Override
     public void execute(TelegramLongPollingBot bot, Message message, String args) {
         adminCommandService.handleMute(bot, message, args);
     }

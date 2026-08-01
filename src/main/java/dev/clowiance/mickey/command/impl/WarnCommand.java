@@ -24,6 +24,11 @@ public class WarnCommand implements ICommand {
     }
 
     @Override
+    public boolean isGroupOnly() {
+        return true;
+    }
+
+    @Override
     public void execute(TelegramLongPollingBot bot, Message message, String args) {
         adminCommandService.handleWarn(bot, message, args);
     }

@@ -8,7 +8,15 @@ public interface ICommand {
     void execute(TelegramLongPollingBot bot, Message message, String args);
     boolean isAdminOnly();
 
-    default CommandAccess getAccessLevel() {
-        return isAdminOnly() ? CommandAccess.CHAT_ADMIN : CommandAccess.PUBLIC;
+    default boolean isDevOnly() {
+        return false;
+    }
+
+    default boolean isGroupOnly() {
+        return false;
+    }
+
+    default boolean isInfoCommand() {
+        return false;
     }
 }

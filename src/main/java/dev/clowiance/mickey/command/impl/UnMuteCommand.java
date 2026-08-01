@@ -24,7 +24,12 @@ public class UnMuteCommand implements ICommand {
     }
 
     @Override
+    public boolean isGroupOnly() {
+        return true;
+    }
+
+    @Override
     public void execute(TelegramLongPollingBot bot, Message message, String args) {
-        adminCommandService.handleUnmute(bot, message);
+        adminCommandService.handleUnMute(bot, message, args);
     }
 }

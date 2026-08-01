@@ -24,7 +24,12 @@ public class StatsCommand implements ICommand {
     }
 
     @Override
+    public boolean isGroupOnly() {
+        return true;
+    }
+
+    @Override
     public void execute(TelegramLongPollingBot bot, Message message, String args) {
-        adminCommandService.handleStats(bot, message);
+        adminCommandService.handleStats(bot, message, args);
     }
 }

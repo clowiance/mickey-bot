@@ -24,6 +24,11 @@ public class PollCommand implements ICommand {
     }
 
     @Override
+    public boolean isGroupOnly() {
+        return true;
+    }
+
+    @Override
     public void execute(TelegramLongPollingBot bot, Message message, String args) {
         userCommandService.handlePoll(bot, message, args);
     }

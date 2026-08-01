@@ -13,6 +13,7 @@ import java.util.Map;
 
 @Component
 public class CommandManager {
+
     private final Map<String, ICommand> commands = new HashMap<>();
 
     public CommandManager(List<ICommand> commandList) {
@@ -21,25 +22,58 @@ public class CommandManager {
         }
     }
 
+    public ICommand find(String command) {
+        return commands.get(command);
+    }
+
     public void process(String command, TelegramLongPollingBot bot, Message message, String args,
-                        CommandAuthorization authorization) {
+                        boolean isChatAdmin, boolean isDev) {
         ICommand cmd = commands.get(command);
         if (cmd == null) {
             return;
         }
-        if (!authorization.allows(cmd.getAccessLevel())) {
-            sendNotAdmin(bot, message);
+        if (cmd.isDevOnly() && !isDev) {
+            sendDenied(bot, message, TextHelper.NOT_DEV);
+            return;
+        }
+        if (cmd.isAdminOnly() && !isChatAdmin && !isDev) {
+            sendDenied(bot, message, TextHelper.NOT_ADMIN);
             return;
         }
         cmd.execute(bot, message, args);
     }
 
-    private void sendNotAdmin(TelegramLongPollingBot bot, Message message) {
+    public void processPrivate(String command, TelegramLongPollingBot bot, Message message, String args,
+                               boolean isDev) {
+        ICommand cmd = commands.get(command);
+        if (cmd == null) {
+            return;
+        }
+        if (cmd.isGroupOnly()) {
+            sendDenied(bot, message, TextHelper.GROUP_ONLY);
+            return;
+        }
+        if (!isDev && !cmd.isInfoCommand()) {
+            sendDenied(bot, message, TextHelper.PRIVATE_RESTRICTED);
+            return;
+        }
+        if (cmd.isDevOnly() && !isDev) {
+            sendDenied(bot, message, TextHelper.NOT_DEV);
+            return;
+        }
+        if (cmd.isAdminOnly() && !isDev) {
+            sendDenied(bot, message, TextHelper.NOT_ADMIN);
+            return;
+        }
+        cmd.execute(bot, message, args);
+    }
+
+    private void sendDenied(TelegramLongPollingBot bot, Message message, String text) {
         try {
             SendMessage sendMessage = new SendMessage();
             sendMessage.setChatId(message.getChatId());
             sendMessage.setParseMode("HTML");
-            sendMessage.setText(TextHelper.NOT_ADMIN);
+            sendMessage.setText(text);
             bot.execute(sendMessage);
         } catch (TelegramApiException ignored) {
         }

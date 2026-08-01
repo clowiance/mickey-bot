@@ -4,7 +4,6 @@ import dev.clowiance.mickey.catalog.application.UniversityCatalogService;
 import dev.clowiance.mickey.catalog.domain.EducationLevel;
 import dev.clowiance.mickey.catalog.domain.StudyForm;
 import dev.clowiance.mickey.catalog.presentation.CatalogMessageRenderer;
-import dev.clowiance.mickey.command.CommandAccess;
 import dev.clowiance.mickey.command.ICommand;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -40,8 +39,8 @@ public class CatalogAdminCommand implements ICommand {
     }
 
     @Override
-    public CommandAccess getAccessLevel() {
-        return CommandAccess.DEVELOPER;
+    public boolean isDevOnly() {
+        return true;
     }
 
     private String executeAction(String args) {

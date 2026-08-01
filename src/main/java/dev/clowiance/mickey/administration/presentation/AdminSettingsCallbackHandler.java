@@ -8,6 +8,7 @@ import dev.clowiance.mickey.catalog.domain.EducationLevel;
 import dev.clowiance.mickey.catalog.domain.Specialty;
 import dev.clowiance.mickey.moderation.application.GroupMemberService;
 import dev.clowiance.mickey.moderation.domain.GroupMemberStatistics;
+import dev.clowiance.mickey.entity.enums.ReportStatus;
 import dev.clowiance.mickey.service.ReportService;
 import dev.clowiance.mickey.telegram.callback.CallbackContext;
 import dev.clowiance.mickey.telegram.callback.CallbackHandler;
@@ -184,7 +185,7 @@ public class AdminSettingsCallbackHandler implements CallbackHandler {
 
     private String renderChatStatistics(Long chatId) {
         GroupMemberStatistics statistics = groupMemberService.statistics(chatId);
-        int pendingReports = reportService.getPendingReportsByChat(chatId).size();
+        int pendingReports = reportService.list(chatId, ReportStatus.WAITING, true).size();
         return "📊 <b>Статистика групи</b>\n\n"
                 + "👥 Учасників у базі: <b>" + statistics.memberCount() + "</b>\n"
                 + "⚠️ Попереджень: <b>" + statistics.totalWarnings() + "</b>\n"
@@ -204,7 +205,7 @@ public class AdminSettingsCallbackHandler implements CallbackHandler {
                 + "🎓 Активних програм: <b>" + catalogService.countActive() + "</b>\n"
                 + "👥 Записів учасників: <b>" + total.memberCount() + "</b>\n"
                 + "⚠️ Попереджень: <b>" + total.totalWarnings() + "</b>\n"
-                + "🚨 Активних репортів: <b>" + reportService.getAllPendingReports().size() + "</b>";
+                + "🚨 Активних репортів: <b>" + reportService.list(null, ReportStatus.WAITING, true).size() + "</b>";
     }
 
     private CallbackView forbidden() {

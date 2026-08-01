@@ -14,9 +14,8 @@ public class PunishmentService {
 
     private final PunishmentLogRepository repository;
 
-    public void log(Long chatId, Long userId, String username, String type, String reason, Long adminId) {
+    public void log(Long userId, String username, String type, String reason, Long adminId) {
         PunishmentLog log = PunishmentLog.builder()
-                .chatId(chatId)
                 .userId(userId)
                 .username(username)
                 .type(type)
@@ -27,7 +26,7 @@ public class PunishmentService {
         repository.save(log);
     }
 
-    public List<PunishmentLog> history(Long chatId, Long userId) {
-        return repository.findByChatIdAndUserIdOrderByCreatedAtDesc(chatId, userId);
+    public List<PunishmentLog> history(Long userId) {
+        return repository.findByUserIdOrderByCreatedAtDesc(userId);
     }
 }

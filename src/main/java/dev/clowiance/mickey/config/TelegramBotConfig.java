@@ -26,10 +26,10 @@ public class TelegramBotConfig {
             telegramBotsApi.registerBot(mickeyHandler);
             var me = mickeyHandler.execute(new GetMe());
             permissionService.setBotUserId(me.getId());
-            log.info("бота @{} успішно зарегано і поллінг тоже почався да", mickeyHandler.getBotUsername());
+            log.info("бота @{} успішно зарегало і поллінг тоже почався да", mickeyHandler.getBotUsername());
         } catch (TelegramApiException e) {
             log.error("не повезло зарегати бота", e);
-            throw new IllegalStateException("не повезло зарегати бота але вже експешином кидаю", e);
+            throw new IllegalStateException("не повезло зарегати бота але експешином кидаю", e);
         }
     }
 }

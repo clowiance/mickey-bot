@@ -1,6 +1,9 @@
 package dev.clowiance.mickey.entity;
 
+import dev.clowiance.mickey.entity.enums.ReportStatus;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -25,14 +28,23 @@ public class Report {
     private Long id;
 
     private Long chatId;
+    private String chatTitle;
+    private String chatUsername;
+
     private Long reporterId;
     private String reporterUsername;
+
     private Long targetId;
     private String targetUsername;
+
     private String reason;
 
-    @Builder.Default
-    private String status = "PENDING";
+    @Enumerated(EnumType.STRING)
+    private ReportStatus status;
 
     private LocalDateTime createdAt;
+
+    private Long resolvedById;
+    private String resolvedByUsername;
+    private LocalDateTime resolvedAt;
 }

@@ -1,7 +1,5 @@
 package dev.clowiance.mickey.service;
 
-import dev.clowiance.mickey.administration.application.ChatAdministrationService;
-import dev.clowiance.mickey.administration.domain.ChatFeature;
 import dev.clowiance.mickey.helper.TextHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,14 +20,14 @@ public class UserCommandService {
 
     private final PollService pollService;
     private final BroadcastService broadcastService;
-    private final ChatAdministrationService chatAdministrationService;
+    private final ActivityAuditService activityAuditService;
 
     private static final DateTimeFormatter INPUT_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     public void handlePoll(TelegramLongPollingBot bot, Message message, String argsText) {
         String[] split = argsText.split("\\?", 2);
         if (split.length < 2) {
-            reply(bot, message, "⚠️ Формат: /poll Питання? Варіант1;Варіант2;...");
+            reply(bot, message, "⚠️ Формат: /poll Питання? Варіант 1;Варіант 2;...");
             return;
         }
         String question = split[0].trim();
@@ -45,6 +43,8 @@ public class UserCommandService {
 
         boolean created = pollService.createPoll(bot, message.getChatId(), question, options);
         if (created) {
+            activityAuditService.logActivity(message.getChatId(), message.getFrom().getId(), message.getFrom().getUserName(),
+                    "MODERATION", "POLL_CREATED", "Питання: " + question);
             reply(bot, message, TextHelper.POLL_CREATED);
         } else {
             reply(bot, message, "❌ Не вдалося створити опитування.");
@@ -52,10 +52,6 @@ public class UserCommandService {
     }
 
     public void handleSchedule(TelegramLongPollingBot bot, Message message, String argsText) {
-        if (!chatAdministrationService.isEnabled(message.getChatId(), ChatFeature.BROADCASTS)) {
-            reply(bot, message, "⛔ Розсилки вимкнені в налаштуваннях цієї групи.");
-            return;
-        }
         String[] parts = argsText.trim().split("\\s+", 3);
         if (parts.length < 3) {
             reply(bot, message, TextHelper.BROADCAST_HELP);
@@ -65,6 +61,8 @@ public class UserCommandService {
             LocalDateTime sendAt = LocalDateTime.parse(parts[0] + " " + parts[1], INPUT_FORMAT);
             String text = parts[2];
             broadcastService.schedule(message.getChatId(), text, sendAt);
+            activityAuditService.logActivity(message.getChatId(), message.getFrom().getId(), message.getFrom().getUserName(),
+                    "MODERATION", "BROADCAST_SCHEDULED", "Час: " + sendAt.format(INPUT_FORMAT) + " | Текст: " + truncate(text, 200));
             reply(bot, message, String.format(TextHelper.BROADCAST_SCHEDULED, sendAt.format(INPUT_FORMAT)));
         } catch (DateTimeParseException e) {
             reply(bot, message, "⚠️ Неправильний формат дати. " + TextHelper.BROADCAST_HELP);
@@ -80,5 +78,13 @@ public class UserCommandService {
             bot.execute(sendMessage);
         } catch (TelegramApiException ignored) {
         }
+    }
+
+    private String truncate(String text, int maxLength) {
+        if (text == null) {
+            return "";
+        }
+        String singleLine = text.replaceAll("\\s+", " ").trim();
+        return singleLine.length() > maxLength ? singleLine.substring(0, maxLength) + "…" : singleLine;
     }
 }

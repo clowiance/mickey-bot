@@ -1,21 +1,20 @@
 package dev.clowiance.mickey.command.impl;
 
 import dev.clowiance.mickey.command.ICommand;
+import dev.clowiance.mickey.handler.helper.MenuImageSender;
 import dev.clowiance.mickey.helper.KeyboardHelper;
 import dev.clowiance.mickey.helper.TextHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 @Component
 @RequiredArgsConstructor
 public class HelpCommand implements ICommand {
 
     private final KeyboardHelper keyboardHelper;
+    private final MenuImageSender menuImageSender;
 
     @Override
     public String getCommand() {
@@ -28,21 +27,12 @@ public class HelpCommand implements ICommand {
     }
 
     @Override
-    public void execute(TelegramLongPollingBot bot, Message message, String args) {
-        send(bot, message.getChatId(), TextHelper.HELP_TEXT, keyboardHelper.backToMenu());
+    public boolean isInfoCommand() {
+        return true;
     }
 
-    private void send(TelegramLongPollingBot bot, Long chatId, String text, InlineKeyboardMarkup keyboard) {
-        try {
-            SendMessage sendMessage = new SendMessage();
-            sendMessage.setChatId(chatId);
-            sendMessage.setParseMode("HTML");
-            sendMessage.setText(text);
-            if (keyboard != null) {
-                sendMessage.setReplyMarkup(keyboard);
-            }
-            bot.execute(sendMessage);
-        } catch (TelegramApiException ignored) {
-        }
+    @Override
+    public void execute(TelegramLongPollingBot bot, Message message, String args) {
+        menuImageSender.sendMenuPhoto(bot, message.getChatId(), TextHelper.HELP_TEXT, keyboardHelper.mainMenu());
     }
 }
