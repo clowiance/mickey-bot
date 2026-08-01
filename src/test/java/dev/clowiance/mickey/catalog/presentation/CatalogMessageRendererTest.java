@@ -14,19 +14,112 @@ import static org.mockito.Mockito.when;
 
 class CatalogMessageRendererTest {
 
+    private static final int TELEGRAM_MESSAGE_LIMIT = 4096;
+
     @Test
-    void rendersDentistryAsFirstYearInsteadOfGenericMasterPeriod() {
+    void rendersDentistryWithFirstYearPriceAndFullPeriodNote() {
+        Specialty dentistry = entry("m-i1-dentistry");
+        CatalogMessageRenderer renderer = rendererFor(EducationLevel.MASTER, List.of(dentistry));
+
+        String message = normalize(renderer.renderPrices(EducationLevel.MASTER));
+
+        assertThat(message).contains("Ціна за І курс")
+                .contains("💵 Денна: 51 600 грн")
+                .contains("383 800 грн")
+                .contains("Офіційний сайт УКД");
+    }
+
+    @Test
+    void marksMissingPartTimeAsNotOffered() {
+        Specialty architecture = entry("b-g17-architecture");
+        CatalogMessageRenderer renderer = rendererFor(EducationLevel.BACHELOR, List.of(architecture));
+
+        String message = normalize(renderer.renderPrices(EducationLevel.BACHELOR));
+
+        assertThat(message).contains("📘 Заочна: не передбачена");
+    }
+
+    @Test
+    void showsFullTimePriceRangeInHeader() {
+        CatalogMessageRenderer renderer = rendererFor(EducationLevel.BACHELOR, bachelors());
+
+        String message = normalize(renderer.renderPrices(EducationLevel.BACHELOR));
+
+        assertThat(message).contains("Денна форма: 49 600 грн – 51 600 грн");
+    }
+
+    @Test
+    void listsEveryActiveSpecialtyOfLevel() {
+        CatalogMessageRenderer renderer = rendererFor(EducationLevel.BACHELOR, bachelors());
+
+        String message = normalize(renderer.renderSpecialties(EducationLevel.BACHELOR));
+
+        assertThat(message).contains("21 програма");
+        for (Specialty specialty : bachelors()) {
+            assertThat(message).contains(specialty.name());
+        }
+    }
+
+    @Test
+    void distinguishesProgramsThatShareSpecialtyCode() {
+        CatalogMessageRenderer renderer = rendererFor(EducationLevel.BACHELOR, bachelors());
+
+        String message = normalize(renderer.renderPrices(EducationLevel.BACHELOR));
+
+        assertThat(message).contains("Project Менеджмент")
+                .contains("Бізнес та приватне підприємництво")
+                .contains("Логістика");
+    }
+
+    @Test
+    void skipsProgramNameThatOnlyRepeatsSpecialtyName() {
+        CatalogMessageRenderer renderer = rendererFor(EducationLevel.BACHELOR, bachelors());
+
+        String message = normalize(renderer.renderSpecialties(EducationLevel.BACHELOR));
+
+        assertThat(message).doesNotContain("↳ <i>Туризм і рекреація</i>")
+                .doesNotContain("↳ <i>Готельно-ресторанна справа</i>")
+                .contains("↳ <i>Графічний дизайн</i>");
+    }
+
+    @Test
+    void keepsEveryCatalogViewWithinTelegramMessageLimit() {
+        for (EducationLevel level : EducationLevel.values()) {
+            List<Specialty> specialties = UkdCatalogData.entries().stream()
+                    .filter(entry -> entry.educationLevel() == level)
+                    .toList();
+            CatalogMessageRenderer renderer = rendererFor(level, specialties);
+
+            assertThat(renderer.renderPrices(level).length())
+                    .as("вартість навчання, %s", level)
+                    .isLessThanOrEqualTo(TELEGRAM_MESSAGE_LIMIT);
+            assertThat(renderer.renderSpecialties(level).length())
+                    .as("спеціальності, %s", level)
+                    .isLessThanOrEqualTo(TELEGRAM_MESSAGE_LIMIT);
+        }
+    }
+
+    /** Формат uk-UA розділяє тисячі нерозривним пробілом — зводимо до звичайного для порівнянь. */
+    private String normalize(String text) {
+        return text.replace("\u00A0", " ").replace("\u202F", " ");
+    }
+
+    private CatalogMessageRenderer rendererFor(EducationLevel level, List<Specialty> specialties) {
         UniversityCatalogService service = mock(UniversityCatalogService.class);
-        Specialty dentistry = UkdCatalogData.entries().stream()
-                .filter(entry -> entry.catalogKey().equals("m-i1-dentistry"))
+        when(service.findActive(level)).thenReturn(specialties);
+        return new CatalogMessageRenderer(service);
+    }
+
+    private List<Specialty> bachelors() {
+        return UkdCatalogData.entries().stream()
+                .filter(entry -> entry.educationLevel() == EducationLevel.BACHELOR)
+                .toList();
+    }
+
+    private Specialty entry(String catalogKey) {
+        return UkdCatalogData.entries().stream()
+                .filter(item -> item.catalogKey().equals(catalogKey))
                 .findFirst()
                 .orElseThrow();
-        when(service.findActive(EducationLevel.MASTER)).thenReturn(List.of(dentistry));
-
-        String message = new CatalogMessageRenderer(service).renderPrices(EducationLevel.MASTER);
-
-        assertThat(message).contains("І курс — Денна:")
-                .contains("383 800 грн")
-                .contains("офіційний сайт УКД");
     }
 }

@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Chat;
@@ -28,8 +29,10 @@ import org.telegram.telegrambots.meta.api.objects.MaybeInaccessibleMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,6 +40,9 @@ import java.util.Optional;
 @Component
 @RequiredArgsConstructor
 public class MickeyHandler extends TelegramLongPollingBot {
+
+    private static final int PHOTO_CAPTION_LIMIT = 1024;
+    private static final int MESSAGE_LIMIT = 4096;
 
     private final BotProperties botProperties;
     private final ChatMemberService chatMemberService;
@@ -292,23 +298,71 @@ public class MickeyHandler extends TelegramLongPollingBot {
     }
 
     private void renderMenuView(MaybeInaccessibleMessage originalMessage, Long chatId, Integer messageId,
-                                String text, org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup keyboard) {
+                                String text, InlineKeyboardMarkup keyboard) {
         boolean hasPhoto = originalMessage instanceof Message msg && msg.hasPhoto();
         boolean hasText = originalMessage instanceof Message msg && msg.hasText() && msg.getText() != null && !msg.getText().isBlank();
+
+        // Підпис до фото в Telegram обмежений 1024 символами: довгі розділи (каталог, /help)
+        // показуємо окремим текстовим повідомленням, інакше кінець списку просто обрізається.
+        if (text != null && text.length() > PHOTO_CAPTION_LIMIT) {
+            deleteMessage(chatId, messageId);
+            sendLongMenuText(chatId, text, keyboard);
+            return;
+        }
 
         if (hasPhoto) {
             menuMediaUpdater.editToMenuPhoto(this, chatId, messageId, text, keyboard);
         } else if (hasText) {
-            try {
-                DeleteMessage deleteMessage = new DeleteMessage();
-                deleteMessage.setChatId(chatId);
-                deleteMessage.setMessageId(messageId);
-                execute(deleteMessage);
-            } catch (Exception ignored) {
-            }
+            deleteMessage(chatId, messageId);
             menuImageSender.sendMenuPhoto(this, chatId, text, keyboard);
         } else {
             menuImageSender.sendMenuPhoto(this, chatId, text, keyboard);
+        }
+    }
+
+    private void deleteMessage(Long chatId, Integer messageId) {
+        try {
+            DeleteMessage deleteMessage = new DeleteMessage();
+            deleteMessage.setChatId(chatId);
+            deleteMessage.setMessageId(messageId);
+            execute(deleteMessage);
+        } catch (Exception ignored) {
+        }
+    }
+
+    /**
+     * Ділить текст на частини по межах рядків, щоб не впертися в ліміт повідомлення (4096),
+     * і чіпляє клавіатуру до останньої частини.
+     */
+    private void sendLongMenuText(Long chatId, String text, InlineKeyboardMarkup keyboard) {
+        List<String> chunks = new ArrayList<>();
+        StringBuilder chunk = new StringBuilder();
+        for (String line : text.split("\n", -1)) {
+            if (chunk.length() + line.length() + 1 > MESSAGE_LIMIT && chunk.length() > 0) {
+                chunks.add(chunk.toString());
+                chunk = new StringBuilder();
+            }
+            if (chunk.length() > 0) {
+                chunk.append("\n");
+            }
+            chunk.append(line);
+        }
+        chunks.add(chunk.toString());
+
+        for (int i = 0; i < chunks.size(); i++) {
+            SendMessage sendMessage = new SendMessage();
+            sendMessage.setChatId(chatId);
+            sendMessage.setParseMode("HTML");
+            sendMessage.disableWebPagePreview();
+            sendMessage.setText(chunks.get(i));
+            if (i == chunks.size() - 1 && keyboard != null) {
+                sendMessage.setReplyMarkup(keyboard);
+            }
+            try {
+                execute(sendMessage);
+            } catch (TelegramApiException e) {
+                log.error("Не вдалося надіслати розділ меню", e);
+            }
         }
     }
 }
