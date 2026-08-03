@@ -29,7 +29,8 @@ public class PricesCommand implements ICommand {
             response.setText("💰 <b>Вартість навчання в УКД — 2026</b>\n\nОберіть освітній рівень:");
             response.setReplyMarkup(keyboardHelper.catalogLevelMenu("prices"));
             bot.execute(response);
-        } catch (TelegramApiException ignored) {
+        } catch (TelegramApiException exception) {
+            dev.clowiance.mickey.telegram.TelegramFailures.log("prices-menu", message.getChatId(), exception);
         }
     }
 

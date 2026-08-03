@@ -74,6 +74,10 @@ public class MenuMessenger {
         return ownershipRegistry.isOwnedByOther(chatId, messageId, userId);
     }
 
+    public boolean isOwnedBy(Long chatId, Integer messageId, Long userId) {
+        return ownershipRegistry.isOwnedBy(chatId, messageId, userId);
+    }
+
     private boolean isLong(String text) {
         return text != null && text.length() > PHOTO_CAPTION_LIMIT;
     }

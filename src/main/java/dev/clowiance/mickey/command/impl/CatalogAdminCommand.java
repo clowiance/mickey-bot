@@ -98,7 +98,8 @@ public class CatalogAdminCommand implements ICommand {
             response.setParseMode("HTML");
             response.setText(text);
             bot.execute(response);
-        } catch (TelegramApiException ignored) {
+        } catch (TelegramApiException exception) {
+            dev.clowiance.mickey.telegram.TelegramFailures.log("catalog-admin-reply", message.getChatId(), exception);
         }
     }
 }

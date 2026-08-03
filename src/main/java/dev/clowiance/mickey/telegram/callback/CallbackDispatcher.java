@@ -12,6 +12,7 @@ public class CallbackDispatcher {
 
     public CallbackDispatcher(List<CallbackHandler> handlers) {
         this.handlers = List.copyOf(handlers);
+        validateNamespaces(this.handlers);
     }
 
     public Optional<CallbackView> dispatch(CallbackContext context) {
@@ -19,5 +20,20 @@ public class CallbackDispatcher {
                 .filter(handler -> handler.supports(context.data()))
                 .findFirst()
                 .map(handler -> handler.handle(context));
+    }
+
+    private void validateNamespaces(List<CallbackHandler> handlers) {
+        for (int left = 0; left < handlers.size(); left++) {
+            for (int right = left + 1; right < handlers.size(); right++) {
+                for (String leftNamespace : handlers.get(left).namespaces()) {
+                    for (String rightNamespace : handlers.get(right).namespaces()) {
+                        if (leftNamespace.startsWith(rightNamespace) || rightNamespace.startsWith(leftNamespace)) {
+                            throw new IllegalStateException("Callback namespace conflict: "
+                                    + leftNamespace + " / " + rightNamespace);
+                        }
+                    }
+                }
+            }
+        }
     }
 }

@@ -7,8 +7,9 @@ Telegram-бот для абітурієнтських і студентськи�
 - Java 21
 - Spring Boot 3.3
 - Telegram Bots API
-- Spring Data JPA + SQLite
+- Spring Data JPA + SQLite (WAL, Liquibase)
 - Gradle 8.14
+- Python 3 — генерація PNG-діаграм без сторонніх пакетів
 
 ## Дані УКД
 
@@ -26,7 +27,8 @@ Telegram-бот для абітурієнтських і студентськи�
 - [Магістратура і вартість 2026](https://ukd.edu.ua/mahistratura)
 - [Спеціальності та освітні програми](https://ukd.edu.ua/specialnosti-ta-osvitni-programi)
 
-Початкові дані додаються в SQLite лише для відсутніх `catalogKey`, тому ручні зміни адміністратора не перезаписуються після рестарту.
+Початкові дані синхронізуються за `catalogKey`: офіційні назви, джерела й ціни оновлюються з seed,
+а ручний прапорець `active` не перезаписується після рестарту.
 
 ## Запуск
 
@@ -44,6 +46,15 @@ BOT_TOKEN=token_from_botfather
 BOT_DEV_IDS=123456789,987654321
 ```
 
+Для першого production-запуску рекомендується спочатку створити backup:
+
+```powershell
+.\scripts\backup-db.ps1
+```
+
+Liquibase автоматично оновить стару SQLite-схему, після чого Hibernate лише перевірить її через
+`ddl-auto: validate`. База працює з `busy_timeout` і WAL; scheduler-и стартують після завершення seed/migration.
+
 ## Команди користувача
 
 - `/menu` — головне меню
@@ -51,6 +62,7 @@ BOT_DEV_IDS=123456789,987654321
 - `/prices` — офіційна вартість навчання у 2026 році
 - `/faq` — часті запитання
 - `/report` — скарга на користувача
+- `/groups` — активні навчальні групи зі сховища (команда доступна лише всередині Telegram-груп)
 
 ## Керування групою
 
@@ -60,6 +72,19 @@ BOT_DEV_IDS=123456789,987654321
 - перемикати тип аудиторії: абітурієнти, студенти або змішана;
 - окремо вмикати привітання, модерацію та розсилки;
 - переглядати репорти та статистику групи.
+- будувати діаграми групи та активності за 30 днів.
+
+Діаграми також доступні командою:
+
+```text
+/charts group
+/charts activity
+/charts rating
+/charts earned
+```
+
+Java формує зріз із SQLite, а Python-адаптер із
+`src/main/resources/analytics/render_chart.py` генерує PNG. `matplotlib` встановлювати не потрібно.
 
 Кожна група має незалежний запис у таблиці `managed_chat_settings`.
 
@@ -75,9 +100,37 @@ BOT_DEV_IDS=123456789,987654321
 /catalogadmin active ID
 /broadcastall all 2026-08-01 12:00 Текст
 /broadcastall SPECIALTY_ID 2026-08-01 12:00 Текст
+/groupadmin list
+/groupadmin add Назва|1 курс|https://t.me/+...|Примітка
+/groupadmin disable ID
 ```
 
+У `/devpanel` доступні глобальна діаграма бота й рейтинг економіки.
+
 Ролі розділені на `PUBLIC`, `CHAT_ADMIN` і `DEVELOPER`. Адміністратор однієї групи не отримує глобальних developer-прав.
+
+## Web-адмінка
+
+За замовчуванням web-панель вимкнена і сервер слухає лише localhost. Для ввімкнення:
+
+```env
+ADMIN_PANEL_ENABLED=true
+ADMIN_PANEL_USERNAME=admin
+ADMIN_PANEL_PASSWORD=replace-with-a-long-random-password
+SERVER_ADDRESS=127.0.0.1
+SERVER_PORT=8080
+```
+
+Після запуску відкрий `http://127.0.0.1:8080/admin`. Панель захищена Spring Security, HTTP Basic/form login
+і CSRF. У ній можна:
+
+- перемикати welcome, модерацію та розсилки окремого чату;
+- додавати й вимикати Telegram-інвайти;
+- змінювати ціни та активність спеціальностей;
+- переглядати, скасовувати й повторювати невдалі розсилки;
+- переглядати health і metrics.
+
+Не виставляй `SERVER_ADDRESS=0.0.0.0` без HTTPS/reverse proxy і firewall.
 
 ## Перевірка
 
@@ -86,6 +139,9 @@ BOT_DEV_IDS=123456789,987654321
 .\gradlew.bat build
 ```
 
-Unit-тести перевіряють цілісність каталогу УКД, ключові офіційні ціни, рольову модель і незалежні налаштування груп.
+Тести перевіряють каталог УКД, рольову модель, незалежні налаштування груп, HTML-безпеку,
+lifecycle розсилок, міграцію старої SQLite-бази та захист/рендер web-адмінки.
 
 Докладніше про модулі: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+Результати технічного аудиту: [docs/AUDIT-2026-08-03.md](docs/AUDIT-2026-08-03.md).

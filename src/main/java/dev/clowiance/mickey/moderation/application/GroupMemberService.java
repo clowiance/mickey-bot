@@ -42,6 +42,16 @@ public class GroupMemberService {
     }
 
     @Transactional
+    public void setWarnCount(Long chatId, Long userId, String username, String firstName, int warnCount) {
+        GroupMemberState state = statePort.find(chatId, userId)
+                .orElseGet(() -> GroupMemberState.initial(chatId, userId, username, firstName));
+        String effectiveUsername = username == null ? state.username() : username;
+        String effectiveFirstName = firstName == null ? state.firstName() : firstName;
+        statePort.save(state.withIdentity(effectiveUsername, effectiveFirstName)
+                .withWarnCount(Math.max(0, warnCount)));
+    }
+
+    @Transactional
     public void setMuted(Long chatId, Long userId, boolean muted, LocalDateTime until) {
         GroupMemberState state = statePort.find(chatId, userId)
                 .orElseGet(() -> GroupMemberState.initial(chatId, userId, null, null));

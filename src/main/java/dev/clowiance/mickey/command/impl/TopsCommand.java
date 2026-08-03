@@ -78,7 +78,8 @@ public class TopsCommand implements ICommand {
             sendMessage.setParseMode("HTML");
             sendMessage.setText(text);
             bot.execute(sendMessage);
-        } catch (TelegramApiException ignored) {
+        } catch (TelegramApiException exception) {
+            dev.clowiance.mickey.telegram.TelegramFailures.log("tops-reply", chatId, exception);
         }
     }
 }

@@ -5,3 +5,5 @@
 build/
 bin/
 mickey.db
+backups/
+dist/

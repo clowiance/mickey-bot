@@ -56,6 +56,17 @@ public class MenuOwnershipRegistry {
                 .isPresent();
     }
 
+    /**
+     * Перемальовувати меню на місці можна лише тому, за ким воно закріплене. Меню без
+     * власника (надіслані до рестарту або повз {@link MenuMessenger}) свідомо вважаються
+     * чужими: інакше перший, хто натисне кнопку, змінював би картинку всьому чату.
+     */
+    public boolean isOwnedBy(Long chatId, Integer messageId, Long userId) {
+        return ownerOf(chatId, messageId)
+                .filter(owner -> owner.equals(userId))
+                .isPresent();
+    }
+
     private String key(Long chatId, Integer messageId) {
         return chatId + ":" + messageId;
     }

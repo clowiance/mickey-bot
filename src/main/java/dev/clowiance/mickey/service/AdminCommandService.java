@@ -1,33 +1,18 @@
 package dev.clowiance.mickey.service;
 
-import dev.clowiance.mickey.entity.ChatMember;
 import dev.clowiance.mickey.entity.PunishmentLog;
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
 import dev.clowiance.mickey.entity.WarnEntity;
 import dev.clowiance.mickey.helper.TargetHelper;
+import dev.clowiance.mickey.helper.TelegramHtml;
 import dev.clowiance.mickey.helper.TextHelper;
 import dev.clowiance.mickey.helper.TimeHelper;
-<<<<<<< HEAD
-=======
-import dev.clowiance.mickey.helper.TextHelper;
->>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
+import dev.clowiance.mickey.moderation.application.GroupMemberService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-import org.telegram.telegrambots.meta.api.objects.User;
->>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.time.LocalDateTime;
@@ -36,34 +21,24 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AdminCommandService {
 
-    private final ChatMemberService chatMemberService;
+    private final GroupMemberService groupMemberService;
     private final ModerationService moderationService;
     private final PunishmentService punishmentService;
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
     private final WarnService warnService;
     private final GuardService guardService;
     private final TargetHelper targetHelper;
     private final TimeHelper timeHelper;
     private final PermissionService permissionService;
     private final ActivityAuditService activityAuditService;
-<<<<<<< HEAD
-=======
->>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
+    private final dev.clowiance.mickey.helper.KeyboardHelper keyboardHelper;
+    private final dev.clowiance.mickey.telegram.menu.MenuMessenger menuMessenger;
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
 
     public void handleWarn(TelegramLongPollingBot bot, Message message, String argsText) {
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
         TargetHelper.ResolvedTarget target = targetHelper.resolve(bot, message, argsText);
         if (!target.found()) {
             reply(bot, message, TextHelper.TARGET_NOT_FOUND);
@@ -80,15 +55,18 @@ public class AdminCommandService {
         String reason = target.remainingArgs().isBlank() ? "не вказано" : target.remainingArgs();
 
         synchronized (this) {
-            List<WarnEntity> activeWarns = warnService.getActiveWarns(target.id());
+            List<WarnEntity> activeWarns = warnService.getActiveWarns(message.getChatId(), target.id());
             if (activeWarns.size() >= 3) {
                 reply(bot, message, "⚠️ У користувача вже є максимальна кількість попереджень (3/3).");
                 return;
             }
 
-            WarnEntity createdWarn = warnService.addWarn(target.id(), reason, message.getFrom().getId());
-            int warns = warnService.getActiveWarns(target.id()).size();
-            punishmentService.log(target.id(), target.username(), "WARN", reason, message.getFrom().getId());
+            WarnEntity createdWarn = warnService.addWarn(
+                    message.getChatId(), target.id(), reason, message.getFrom().getId());
+            int warns = warnService.getActiveWarns(message.getChatId(), target.id()).size();
+            groupMemberService.setWarnCount(message.getChatId(), target.id(), target.username(), null, warns);
+            punishmentService.log(message.getChatId(), target.id(), target.username(),
+                    "WARN", reason, message.getFrom().getId());
             activityAuditService.logActivity(message.getChatId(), target.id(), target.username(), "MODERATION", "WARN",
                     String.format("Причина: %s | Адміністратор: %s | Попереджень: %d/3", reason, mentionAdmin(message), warns));
 
@@ -99,14 +77,15 @@ public class AdminCommandService {
                             "👮 <b>Адміністратор:</b> %s\n" +
                             "📊 <b>Кількість попереджень:</b> %d/3\n" +
                             "📝 <b>Причина:</b> %s",
-                    createdWarn.getId(), target.mention(), adminMention, warns, reason
+                    createdWarn.getId(), target.mention(), adminMention, warns, TelegramHtml.escape(reason)
             );
             reply(bot, message, details);
 
             if (warns >= 3) {
                 moderationService.banUser(bot, message.getChatId(), target.id(), null);
-                chatMemberService.setBanned(target.id(), true);
-                punishmentService.log(target.id(), target.username(), "AUTO_BAN", "3 попередження", message.getFrom().getId());
+                groupMemberService.setBanned(message.getChatId(), target.id(), true);
+                punishmentService.log(message.getChatId(), target.id(), target.username(),
+                        "AUTO_BAN", "3 попередження", message.getFrom().getId());
                 activityAuditService.logActivity(message.getChatId(), target.id(), target.username(), "MODERATION", "AUTO_BAN",
                         "Автоматичний бан після 3 попереджень | Адміністратор: " + mentionAdmin(message));
                 reply(bot, message, String.format(TextHelper.AUTO_BAN_AFTER_WARNS, target.mention()));
@@ -132,7 +111,7 @@ public class AdminCommandService {
         final Long finalSpecificWarnId = specificWarnId;
 
         synchronized (this) {
-            List<WarnEntity> activeWarns = warnService.getActiveWarns(target.id());
+            List<WarnEntity> activeWarns = warnService.getActiveWarns(message.getChatId(), target.id());
             if (activeWarns.isEmpty()) {
                 reply(bot, message, "❌ У цього користувача немає активних попереджень.");
                 return;
@@ -151,7 +130,8 @@ public class AdminCommandService {
                 warnService.removeWarnById(targetWarn.getId());
             }
 
-            int remainingWarns = warnService.getActiveWarns(target.id()).size();
+            int remainingWarns = warnService.getActiveWarns(message.getChatId(), target.id()).size();
+            groupMemberService.setWarnCount(message.getChatId(), target.id(), target.username(), null, remainingWarns);
             String adminMention = mentionAdmin(message);
             activityAuditService.logActivity(message.getChatId(), target.id(), target.username(), "MODERATION", "UNWARN",
                     String.format("Знято попередження #%d | Адміністратор: %s | Залишилось: %d/3",
@@ -164,33 +144,10 @@ public class AdminCommandService {
                     targetWarn.getId(), target.mention(), adminMention, remainingWarns
             );
             reply(bot, message, details);
-<<<<<<< HEAD
-=======
-        if (!requireReply(bot, message)) {
-            return;
-        }
-        User target = message.getReplyToMessage().getFrom();
-        String reason = argsText.isBlank() ? "не вказано" : argsText;
-        int warns = chatMemberService.addWarn(target.getId());
-        punishmentService.log(target.getId(), target.getUserName(), "WARN", reason, message.getFrom().getId());
-        reply(bot, message, String.format(TextHelper.WARN_MESSAGE, mention(target), warns, reason));
-
-        if (warns >= 3) {
-            moderationService.banUser(bot, message.getChatId(), target.getId());
-            chatMemberService.setBanned(target.getId(), true);
-            punishmentService.log(target.getId(), target.getUserName(), "AUTO_BAN", "3 попередження", message.getFrom().getId());
-            reply(bot, message, String.format(TextHelper.AUTO_BAN_AFTER_WARNS, mention(target)));
->>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
         }
     }
 
     public void handleMute(TelegramLongPollingBot bot, Message message, String argsText) {
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
         TargetHelper.ResolvedTarget target = targetHelper.resolve(bot, message, argsText);
         if (!target.found()) {
             reply(bot, message, TextHelper.TARGET_NOT_FOUND);
@@ -221,8 +178,9 @@ public class AdminCommandService {
         LocalDateTime mutedUntil = durationSeconds == TimeHelper.PERMANENT
                 ? LocalDateTime.now().plusYears(100)
                 : LocalDateTime.now().plusSeconds(durationSeconds);
-        chatMemberService.setMuted(target.id(), true, mutedUntil);
-        punishmentService.log(target.id(), target.username(), "MUTE", reason, message.getFrom().getId());
+        groupMemberService.setMuted(message.getChatId(), target.id(), true, mutedUntil);
+        punishmentService.log(message.getChatId(), target.id(), target.username(),
+                "MUTE", reason, message.getFrom().getId());
 
         String adminMention = mentionAdmin(message);
         activityAuditService.logActivity(message.getChatId(), target.id(), target.username(), "MODERATION", "MUTE",
@@ -234,7 +192,7 @@ public class AdminCommandService {
                         "👮 <b>Адміністратор:</b> %s\n" +
                         "⏳ <b>Тривалість:</b> %s\n" +
                         "📝 <b>Причина:</b> %s",
-                target.mention(), adminMention, timeHelper.formatDuration(durationSeconds), reason
+                target.mention(), adminMention, timeHelper.formatDuration(durationSeconds), TelegramHtml.escape(reason)
         );
         reply(bot, message, details);
     }
@@ -246,7 +204,7 @@ public class AdminCommandService {
             return;
         }
         moderationService.unmuteUser(bot, message.getChatId(), target.id());
-        chatMemberService.setMuted(target.id(), false, null);
+        groupMemberService.setMuted(message.getChatId(), target.id(), false, null);
 
         String adminMention = mentionAdmin(message);
         activityAuditService.logActivity(message.getChatId(), target.id(), target.username(), "MODERATION", "UNMUTE",
@@ -288,8 +246,9 @@ public class AdminCommandService {
 
         Long banUntilSeconds = durationSeconds == TimeHelper.PERMANENT ? 0L : durationSeconds;
         moderationService.banUser(bot, message.getChatId(), target.id(), banUntilSeconds);
-        chatMemberService.setBanned(target.id(), true);
-        punishmentService.log(target.id(), target.username(), "BAN", reason, message.getFrom().getId());
+        groupMemberService.setBanned(message.getChatId(), target.id(), true);
+        punishmentService.log(message.getChatId(), target.id(), target.username(),
+                "BAN", reason, message.getFrom().getId());
 
         String adminMention = mentionAdmin(message);
         activityAuditService.logActivity(message.getChatId(), target.id(), target.username(), "MODERATION", "BAN",
@@ -301,7 +260,7 @@ public class AdminCommandService {
                         "👮 <b>Адміністратор:</b> %s\n" +
                         "⏳ <b>Тривалість:</b> %s\n" +
                         "📝 <b>Причина:</b> %s",
-                target.mention(), adminMention, timeHelper.formatDuration(durationSeconds), reason
+                target.mention(), adminMention, timeHelper.formatDuration(durationSeconds), TelegramHtml.escape(reason)
         );
         reply(bot, message, details);
     }
@@ -313,7 +272,7 @@ public class AdminCommandService {
             return;
         }
         moderationService.unBanUser(bot, message.getChatId(), target.id());
-        chatMemberService.setBanned(target.id(), false);
+        groupMemberService.setBanned(message.getChatId(), target.id(), false);
 
         String adminMention = mentionAdmin(message);
         activityAuditService.logActivity(message.getChatId(), target.id(), null, "MODERATION", "UNBAN",
@@ -342,7 +301,8 @@ public class AdminCommandService {
         }
         String reason = target.remainingArgs().isBlank() ? "не вказано" : target.remainingArgs();
         moderationService.kickUser(bot, message.getChatId(), target.id());
-        punishmentService.log(target.id(), target.username(), "KICK", reason, message.getFrom().getId());
+        punishmentService.log(message.getChatId(), target.id(), target.username(),
+                "KICK", reason, message.getFrom().getId());
 
         String adminMention = mentionAdmin(message);
         activityAuditService.logActivity(message.getChatId(), target.id(), target.username(), "MODERATION", "KICK",
@@ -352,7 +312,7 @@ public class AdminCommandService {
                         "👤 <b>Користувач:</b> %s\n" +
                         "👮 <b>Адміністратор:</b> %s\n" +
                         "📝 <b>Причина:</b> %s",
-                target.mention(), adminMention, reason
+                target.mention(), adminMention, TelegramHtml.escape(reason)
         );
         reply(bot, message, details);
     }
@@ -363,9 +323,9 @@ public class AdminCommandService {
             reply(bot, message, TextHelper.TARGET_NOT_FOUND);
             return;
         }
-        ChatMember member = chatMemberService.findById(target.id());
-        List<WarnEntity> activeWarns = warnService.getActiveWarns(target.id());
-        List<PunishmentLog> history = punishmentService.history(target.id());
+        var member = groupMemberService.find(message.getChatId(), target.id());
+        List<WarnEntity> activeWarns = warnService.getActiveWarns(message.getChatId(), target.id());
+        List<PunishmentLog> history = punishmentService.history(message.getChatId(), target.id());
 
         StringBuilder sb = new StringBuilder();
         sb.append("📈 <b>Статистика користувача</b> ").append(target.mention()).append("\n\n");
@@ -379,82 +339,10 @@ public class AdminCommandService {
             sb.append("\n");
         }
         if (member != null) {
-<<<<<<< HEAD
-=======
-        if (!requireReply(bot, message)) {
-            return;
-        }
-        User target = message.getReplyToMessage().getFrom();
-        String[] parts = argsText.trim().split("\s+", 2);
-        int minutes = 60;
-        String reason = "не вказано";
-        if (parts.length > 0 && !parts[0].isBlank()) {
-            try {
-                minutes = Integer.parseInt(parts[0]);
-            } catch (NumberFormatException ignored) {
-            }
-        }
-        if (parts.length > 1) {
-            reason = parts[1];
-        }
-        moderationService.muteUser(bot, message.getChatId(), target.getId(), minutes);
-        chatMemberService.setMuted(target.getId(), true, LocalDateTime.now().plusMinutes(minutes));
-        punishmentService.log(target.getId(), target.getUserName(), "MUTE", reason, message.getFrom().getId());
-        reply(bot, message, String.format(TextHelper.MUTE_MESSAGE, mention(target), minutes, reason));
-    }
-
-    public void handleUnmute(TelegramLongPollingBot bot, Message message) {
-        if (!requireReply(bot, message)) {
-            return;
-        }
-        User target = message.getReplyToMessage().getFrom();
-        moderationService.unmuteUser(bot, message.getChatId(), target.getId());
-        chatMemberService.setMuted(target.getId(), false, null);
-        reply(bot, message, "🔊 " + mention(target) + " знову може писати в чат!");
-    }
-
-    public void handleBan(TelegramLongPollingBot bot, Message message, String argsText) {
-        if (!requireReply(bot, message)) {
-            return;
-        }
-        User target = message.getReplyToMessage().getFrom();
-        String reason = argsText.isBlank() ? "не вказано" : argsText;
-        moderationService.banUser(bot, message.getChatId(), target.getId());
-        chatMemberService.setBanned(target.getId(), true);
-        punishmentService.log(target.getId(), target.getUserName(), "BAN", reason, message.getFrom().getId());
-        reply(bot, message, String.format(TextHelper.BAN_MESSAGE, mention(target), reason));
-    }
-
-    public void handleUnban(TelegramLongPollingBot bot, Message message, String argsText) {
-        try {
-            Long targetId = Long.parseLong(argsText.trim());
-            moderationService.unbanUser(bot, message.getChatId(), targetId);
-            chatMemberService.setBanned(targetId, false);
-            reply(bot, message, "✅ Користувача " + targetId + " розбанено!");
-        } catch (NumberFormatException e) {
-            reply(bot, message, "⚠️ Вкажи коректний ID користувача: /unban 123456789");
-        }
-    }
-
-    public void handleStats(TelegramLongPollingBot bot, Message message) {
-        if (!requireReply(bot, message)) {
-            return;
-        }
-        User target = message.getReplyToMessage().getFrom();
-        ChatMember member = chatMemberService.findById(target.getId());
-        List<PunishmentLog> history = punishmentService.history(target.getId());
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("📈 <b>Статистика користувача</b> ").append(mention(target)).append("\n\n");
-        if (member != null) {
-            sb.append("⚠️ Попереджень: ").append(member.getWarnCount()).append("\n");
->>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
-            sb.append("🔇 Замучений: ").append(Boolean.TRUE.equals(member.getMuted()) ? "так" : "ні").append("\n");
-            sb.append("⛔ Забанений: ").append(Boolean.TRUE.equals(member.getBanned()) ? "так" : "ні").append("\n");
-            if (member.getJoinedAt() != null) {
-                sb.append("📅 У чаті з: ").append(member.getJoinedAt().format(FORMATTER)).append("\n");
+            sb.append("🔇 Замучений: ").append(member.muted() ? "так" : "ні").append("\n");
+            sb.append("⛔ Забанений: ").append(member.banned() ? "так" : "ні").append("\n");
+            if (member.joinedAt() != null) {
+                sb.append("📅 У чаті з: ").append(member.joinedAt().format(FORMATTER)).append("\n");
             }
         }
         sb.append("\n📋 <b>Історія покарань:</b>\n");
@@ -462,26 +350,28 @@ public class AdminCommandService {
             sb.append("Немає записів 🙌");
         } else {
             for (PunishmentLog log : history.stream().limit(5).toList()) {
-                sb.append("• ").append(log.getType()).append(" - ").append(log.getReason())
+                sb.append("• ").append(TelegramHtml.escape(log.getType())).append(" - ")
+                        .append(TelegramHtml.escape(log.getReason()))
                         .append(" (").append(log.getCreatedAt().format(FORMATTER)).append(")\n");
             }
         }
         reply(bot, message, sb.toString());
     }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
+    /**
+     * Панель адміністратора — це кнопки, а не простирадло тексту. Раніше сюди дописувався
+     * увесь HELP_TEXT, тож /admin дублював /help цілком; тепер за розділами ведуть кнопки,
+     * а повний перелік команд лишається за /help.
+     */
     public void handleAdminPanel(TelegramLongPollingBot bot, Message message) {
         Long chatId = message.getChatId();
         boolean botIsAdmin = permissionService.isBotAdmin(bot, chatId);
-        StringBuilder sb = new StringBuilder();
-        sb.append(TextHelper.ADMIN_PANEL_HEADER).append("\n\n");
-        sb.append("🤖 Права бота: ").append(botIsAdmin ? "✅ повні" : "❌ неповні/відсутні").append("\n");
-        sb.append("🆔 Chat ID: ").append(chatId).append("\n\n");
-        sb.append(TextHelper.HELP_TEXT);
-        reply(bot, message, sb.toString());
+        String text = TextHelper.ADMIN_PANEL_HEADER + "\n\n"
+                + "🤖 Права бота: " + (botIsAdmin ? "✅ повні" : "❌ неповні/відсутні") + "\n"
+                + "🆔 Chat ID: <code>" + chatId + "</code>\n\n"
+                + "Обери розділ 👇";
+        Long ownerId = message.getFrom() != null ? message.getFrom().getId() : null;
+        menuMessenger.sendMenu(bot, chatId, ownerId, text, keyboardHelper.adminPanel());
     }
 
     private boolean isProtected(TelegramLongPollingBot bot, Message message, Long targetId) {
@@ -497,18 +387,7 @@ public class AdminCommandService {
         if (user.getUserName() != null && !user.getUserName().isBlank()) {
             return "@" + user.getUserName();
         }
-        return user.getFirstName() != null ? user.getFirstName() : String.valueOf(user.getId());
-<<<<<<< HEAD
-=======
-    private boolean requireReply(TelegramLongPollingBot bot, Message message) {
-        if (message.getReplyToMessage() == null) {
-            reply(bot, message, TextHelper.REPLY_NEEDED);
-            return false;
-        }
-        return true;
->>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
+        return user.getFirstName() != null ? TelegramHtml.escape(user.getFirstName()) : String.valueOf(user.getId());
     }
 
     private void reply(TelegramLongPollingBot bot, Message message, String text) {
@@ -518,17 +397,8 @@ public class AdminCommandService {
             sendMessage.setParseMode("HTML");
             sendMessage.setText(text);
             bot.execute(sendMessage);
-        } catch (TelegramApiException ignored) {
+        } catch (TelegramApiException e) {
+            log.warn("Не вдалося надіслати відповідь адмін-команди в чат {}", message.getChatId(), e);
         }
     }
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-
-    private String mention(User user) {
-        return user.getUserName() != null ? "@" + user.getUserName() : user.getFirstName();
-    }
->>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
 }

@@ -12,13 +12,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 class UkdStudyGroupDataTest {
 
     @Test
-    void keepsEveryGroupFromTheCuratorTable() {
+    void keepsOnlyUniversityGroups() {
         List<StudyGroup> entries = UkdStudyGroupData.entries();
 
-        assertThat(entries).hasSize(19);
-        assertThat(countOf(StudyGroupCategory.UNIVERSITY)).isEqualTo(7);
-        assertThat(countOf(StudyGroupCategory.COLLEGE)).isEqualTo(11);
-        assertThat(countOf(StudyGroupCategory.UNSPECIFIED)).isEqualTo(1);
+        assertThat(entries).hasSize(8);
+        assertThat(countOf(StudyGroupCategory.UNIVERSITY)).isEqualTo(8);
+        assertThat(entries).allMatch(group -> group.category() == StudyGroupCategory.UNIVERSITY);
     }
 
     @Test
@@ -33,14 +32,26 @@ class UkdStudyGroupDataTest {
     }
 
     @Test
-    void allowsSameSpecialtyInDifferentCoursesAndCategories() {
+    void containsEveryInviteProvidedByTheCurators() {
+        var links = UkdStudyGroupData.entries().stream().map(StudyGroup::inviteLink).toList();
+
+        assertThat(links).contains(
+                "https://t.me/+GZsXf7J8r8VmM2My",
+                "https://t.me/+o6vCBIYjcuk3ODYy",
+                "https://t.me/+TYur5y1rcBIkOTdi",
+                "https://t.me/+aIrV8xm-yn85MmE6",
+                "https://t.me/+V0a4kWNnk-82MjAy");
+    }
+
+    @Test
+    void containsOneUniversityMarketingGroup() {
         List<StudyGroup> marketing = UkdStudyGroupData.entries().stream()
                 .filter(group -> group.specialty().equals("Маркетинг"))
                 .toList();
 
-        assertThat(marketing).hasSize(3);
+        assertThat(marketing).hasSize(1);
         assertThat(marketing).extracting(StudyGroup::course)
-                .containsExactlyInAnyOrder("1 курс", "2 курс", "Після 9 класу");
+                .containsExactly("1 курс");
     }
 
     @Test

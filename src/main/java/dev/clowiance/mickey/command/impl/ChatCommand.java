@@ -89,7 +89,8 @@ public class ChatCommand implements ICommand {
             sendMessage.setParseMode("HTML");
             sendMessage.setText(text);
             bot.execute(sendMessage);
-        } catch (TelegramApiException ignored) {
+        } catch (TelegramApiException exception) {
+            dev.clowiance.mickey.telegram.TelegramFailures.log("chat-command-reply", message.getChatId(), exception);
         }
     }
 }

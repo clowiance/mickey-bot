@@ -5,6 +5,7 @@ import dev.clowiance.mickey.entity.EconomyAccount;
 import dev.clowiance.mickey.helper.TargetHelper;
 import dev.clowiance.mickey.helper.TextHelper;
 import dev.clowiance.mickey.helper.TimeHelper;
+import dev.clowiance.mickey.moderation.application.GroupMemberService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -22,6 +23,7 @@ public class EconomyUserCommandService {
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
 
     private final ChatMemberService chatMemberService;
+    private final GroupMemberService groupMemberService;
     private final EconomyService economyService;
     private final WarnService warnService;
     private final TargetHelper targetHelper;
@@ -51,7 +53,11 @@ public class EconomyUserCommandService {
 
         ChatMember member = chatMemberService.findById(targetId);
         EconomyAccount account = economyService.getOrCreate(targetId);
-        int activeWarns = warnService.getActiveWarns(targetId).size();
+        boolean groupChat = message.getChat() != null && !message.getChat().isUserChat();
+        int activeWarns = groupChat
+                ? warnService.getActiveWarns(message.getChatId(), targetId).size()
+                : warnService.getActiveWarns(targetId).size();
+        var groupState = groupChat ? groupMemberService.find(message.getChatId(), targetId) : null;
 
         String displayName = displayName(targetUsername, targetFirstName, targetId);
 
@@ -72,9 +78,11 @@ public class EconomyUserCommandService {
             sb.append("🔥 Серія щоденних бонусів: ").append(account.getDailyStreak()).append(" дн.\n");
         }
         sb.append("\n⚠️ Активних попереджень: ").append(activeWarns).append("/3\n");
-        if (member != null) {
-            sb.append("🔇 Замучений: ").append(bool(member.getMuted())).append("\n");
-            sb.append("⛔ Забанений: ").append(bool(member.getBanned())).append("\n");
+        if (groupState != null) {
+            sb.append("🔇 Замучений у цій групі: ").append(bool(groupState.muted())).append("\n");
+            sb.append("⛔ Забанений у цій групі: ").append(bool(groupState.banned())).append("\n");
+        } else if (!groupChat) {
+            sb.append("ℹ️ Статус модерації показується окремо в кожній групі.\n");
         }
 
         reply(bot, message, sb.toString());
@@ -133,7 +141,8 @@ public class EconomyUserCommandService {
             sendMessage.setParseMode("HTML");
             sendMessage.setText(text);
             bot.execute(sendMessage);
-        } catch (TelegramApiException ignored) {
+        } catch (TelegramApiException exception) {
+            dev.clowiance.mickey.telegram.TelegramFailures.log("economy-user-reply", message.getChatId(), exception);
         }
     }
 }

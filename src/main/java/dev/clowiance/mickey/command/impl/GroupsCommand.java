@@ -28,6 +28,11 @@ public class GroupsCommand implements ICommand {
     }
 
     @Override
+    public boolean isGroupOnly() {
+        return true;
+    }
+
+    @Override
     public boolean isInfoCommand() {
         return true;
     }
@@ -36,6 +41,6 @@ public class GroupsCommand implements ICommand {
     public void execute(TelegramLongPollingBot bot, Message message, String args) {
         Long ownerId = message.getFrom() != null ? message.getFrom().getId() : null;
         menuMessenger.sendMenu(bot, message.getChatId(), ownerId,
-                renderer.renderMenu(), callbackHandler.categoryMenu());
+                renderer.renderAll(), callbackHandler.navigationMenu());
     }
 }

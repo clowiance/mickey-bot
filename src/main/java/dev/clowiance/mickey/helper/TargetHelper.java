@@ -26,10 +26,10 @@ public class TargetHelper {
 
         public String mention() {
             if (username != null && !username.isBlank()) {
-                return "@" + username;
+                return "@" + TelegramHtml.escape(username);
             }
             if (firstName != null && !firstName.isBlank()) {
-                return firstName;
+                return TelegramHtml.escape(firstName);
             }
             return id != null ? String.valueOf(id) : "невідомий";
         }

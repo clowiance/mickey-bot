@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="uk" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mickey Bot — адміністрування</title>
+    <style>
+        :root { color-scheme: dark; --bg:#0b1220; --card:#151f31; --line:#293750; --text:#eef4ff; --muted:#9cacbf; --accent:#70a5ff; --ok:#52d18a; --bad:#ff6b7d; }
+        * { box-sizing:border-box } body { margin:0; background:var(--bg); color:var(--text); font:15px/1.45 system-ui,sans-serif }
+        main { width:min(1180px,94vw); margin:32px auto 70px } h1,h2 { margin:.2em 0 .7em } h2 { padding-top:20px }
+        nav { display:flex; gap:16px; flex-wrap:wrap; margin:16px 0 28px } nav a { color:var(--accent) }
+        .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px }
+        .card, .panel { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px }
+        .number { font-size:32px; font-weight:800 } .muted { color:var(--muted) }
+        table { width:100%; border-collapse:collapse; background:var(--card); border-radius:14px; overflow:hidden }
+        th,td { text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top } th { color:var(--muted) }
+        form.inline { display:inline } button { cursor:pointer; border:0; border-radius:8px; padding:8px 12px; background:var(--accent); color:#08101f; font-weight:700 }
+        input,select { width:100%; padding:10px; border:1px solid var(--line); border-radius:8px; background:#0d1728; color:var(--text) }
+        .grid { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; align-items:end } .grid button { height:40px }
+        .on { color:var(--ok) } .off { color:var(--bad) }
+        @media(max-width:800px){ .grid{grid-template-columns:1fr} .table-wrap{overflow:auto} }
+    </style>
+</head>
+<body>
+<main>
+    <h1>🤖 Mickey Bot</h1>
+    <p class="muted">Захищена панель керування групами, спеціальностями та станом розсилок.</p>
+    <nav><a href="#chats">Чати</a><a href="#groups">Інвайти</a><a href="#catalog">Каталог УКД</a><a href="#broadcasts">Розсилки</a><a href="/actuator/health">Health</a></nav>
+
+    <section class="cards">
+        <article class="card"><div class="number" th:text="${#lists.size(chats)}">0</div><div class="muted">керованих чатів</div></article>
+        <article class="card"><div class="number" th:text="${#lists.size(groups)}">0</div><div class="muted">навчальних груп</div></article>
+        <article class="card"><div class="number" th:text="${#lists.size(specialties)}">0</div><div class="muted">спеціальностей</div></article>
+        <article class="card"><div class="number" th:text="${pendingBroadcasts}">0</div><div class="muted">розсилок у черзі</div></article>
+        <article class="card"><div class="number off" th:text="${failedBroadcasts}">0</div><div class="muted">dead-letter розсилок</div></article>
+    </section>
+
+    <h2 id="chats">Керовані Telegram-чати</h2>
+    <div class="table-wrap"><table><thead><tr><th>Chat ID</th><th>Назва</th><th>Аудиторія</th><th>Welcome</th><th>Модерація</th><th>Розсилки</th></tr></thead>
+        <tbody><tr th:each="chat : ${chats}"><td th:text="${chat.chatId}"></td><td th:text="${chat.title}"></td><td th:text="${chat.audience}"></td>
+            <td><form class="inline" method="post" th:action="@{/admin/chats/{id}/toggle/WELCOME(id=${chat.chatId})}"><button th:class="${chat.welcomeEnabled} ? 'on':'off'" th:text="${chat.welcomeEnabled} ? 'ON':'OFF'"></button></form></td>
+            <td><form class="inline" method="post" th:action="@{/admin/chats/{id}/toggle/MODERATION(id=${chat.chatId})}"><button th:class="${chat.moderationEnabled} ? 'on':'off'" th:text="${chat.moderationEnabled} ? 'ON':'OFF'"></button></form></td>
+            <td><form class="inline" method="post" th:action="@{/admin/chats/{id}/toggle/BROADCASTS(id=${chat.chatId})}"><button th:class="${chat.broadcastsEnabled} ? 'on':'off'" th:text="${chat.broadcastsEnabled} ? 'ON':'OFF'"></button></form></td></tr></tbody></table></div>
+
+    <h2 id="groups">Посилання навчальних груп</h2>
+    <form class="panel grid" method="post" th:action="@{/admin/groups}">
+        <label>Спеціальність<input name="specialty" required maxlength="250"></label>
+        <label>Курс<input name="course" maxlength="100"></label>
+        <label>Telegram invite<input name="inviteLink" required placeholder="https://t.me/+..."></label>
+        <button type="submit">Додати</button>
+    </form>
+    <div class="table-wrap"><table><thead><tr><th>ID</th><th>Статус</th><th>Назва</th><th>Курс</th><th>Дія</th></tr></thead>
+        <tbody><tr th:each="group : ${groups}"><td th:text="${group.id}"></td><td th:class="${group.active} ? 'on':'off'" th:text="${group.active} ? 'Активна':'Вимкнена'"></td>
+            <td><a th:href="${group.inviteLink}" th:text="${group.specialty}"></a></td><td th:text="${group.course}"></td>
+            <td><form class="inline" method="post" th:action="@{/admin/groups/{id}/toggle(id=${group.id})}"><button th:text="${group.active} ? 'Вимкнути':'Увімкнути'"></button></form></td></tr></tbody></table></div>
+
+    <h2 id="catalog">Каталог спеціальностей УКД</h2>
+    <div class="table-wrap"><table><thead><tr><th>ID</th><th>Статус</th><th>Код</th><th>Назва</th><th>Вартість</th><th>Дія</th></tr></thead>
+        <tbody><tr th:each="item : ${specialties}"><td th:text="${item.id}"></td><td th:class="${item.active} ? 'on':'off'" th:text="${item.active} ? 'Активна':'Вимкнена'"></td>
+            <td th:text="${item.code}"></td><td th:text="${item.name}"></td><td><form method="post" th:action="@{/admin/catalog/{id}/tuition(id=${item.id})}">
+                <input name="fullTime" type="number" min="0" th:value="${item.fullTimeTuition}" placeholder="Денна">
+                <input name="partTime" type="number" min="0" th:value="${item.partTimeTuition}" placeholder="Заочна"><button>Зберегти ціну</button></form></td>
+            <td><form class="inline" method="post" th:action="@{/admin/catalog/{id}/toggle(id=${item.id})}"><button th:text="${item.active} ? 'Вимкнути':'Увімкнути'"></button></form></td></tr></tbody></table></div>
+
+    <h2 id="broadcasts">Останні розсилки</h2>
+    <div class="table-wrap"><table><thead><tr><th>ID</th><th>Чат</th><th>Час</th><th>Статус</th><th>Спроби</th><th>Помилка</th><th>Дії</th></tr></thead>
+        <tbody><tr th:each="broadcast : ${broadcasts}"><td th:text="${broadcast.id}"></td><td th:text="${broadcast.chatId}"></td><td th:text="${broadcast.sendAt}"></td>
+            <td th:text="${broadcast.status}"></td><td th:text="${broadcast.attemptCount}"></td><td th:text="${broadcast.lastError}"></td><td>
+                <form class="inline" method="post" th:if="${broadcast.status.name() == 'FAILED' or broadcast.status.name() == 'DEAD_LETTER'}" th:action="@{/admin/broadcasts/{id}/retry(id=${broadcast.id})}"><button>Повторити</button></form>
+                <form class="inline" method="post" th:if="${broadcast.status.name() == 'PENDING' or broadcast.status.name() == 'FAILED'}" th:action="@{/admin/broadcasts/{id}/cancel(id=${broadcast.id})}"><button>Скасувати</button></form>
+            </td></tr></tbody></table></div>
+</main>
+</body>
+</html>

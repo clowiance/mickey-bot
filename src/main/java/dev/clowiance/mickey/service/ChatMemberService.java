@@ -34,115 +34,9 @@ public class ChatMemberService {
         return repository.save(member);
     }
 
-    public int addWarn(Long userId) {
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
-        ChatMember member = repository.findById(userId).orElseGet(() -> {
-            ChatMember created = ChatMember.builder().userId(userId).joinedAt(LocalDateTime.now()).build();
-            return repository.save(created);
-        });
-<<<<<<< HEAD
-=======
-        ChatMember member = repository.findById(userId).orElseThrow();
->>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
-        member.setWarnCount(member.getWarnCount() + 1);
-        repository.save(member);
-        return member.getWarnCount();
-    }
-
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
-    public int removeWarn(Long userId) {
-        ChatMember member = repository.findById(userId).orElse(null);
-        if (member == null) {
-            return 0;
-        }
-        int newCount = Math.max(0, member.getWarnCount() - 1);
-        member.setWarnCount(newCount);
-        repository.save(member);
-        return newCount;
-    }
-
-<<<<<<< HEAD
-=======
->>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
-    public void resetWarns(Long userId) {
-        repository.findById(userId).ifPresent(member -> {
-            member.setWarnCount(0);
-            repository.save(member);
-        });
-    }
-
-    public void setMuted(Long userId, boolean muted, LocalDateTime until) {
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
-        repository.findById(userId).ifPresentOrElse(member -> {
-            member.setMuted(muted);
-            member.setMutedUntil(until);
-            repository.save(member);
-        }, () -> {
-            ChatMember member = ChatMember.builder()
-                    .userId(userId)
-                    .muted(muted)
-                    .mutedUntil(until)
-                    .joinedAt(LocalDateTime.now())
-                    .build();
-            repository.save(member);
-<<<<<<< HEAD
-=======
-        repository.findById(userId).ifPresent(member -> {
-            member.setMuted(muted);
-            member.setMutedUntil(until);
-            repository.save(member);
->>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
-        });
-    }
-
-    public void setBanned(Long userId, boolean banned) {
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
-        repository.findById(userId).ifPresentOrElse(member -> {
-            member.setBanned(banned);
-            repository.save(member);
-        }, () -> {
-            ChatMember member = ChatMember.builder()
-                    .userId(userId)
-                    .banned(banned)
-                    .joinedAt(LocalDateTime.now())
-                    .build();
-            repository.save(member);
-<<<<<<< HEAD
-=======
-        repository.findById(userId).ifPresent(member -> {
-            member.setBanned(banned);
-            repository.save(member);
->>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
-        });
-    }
-
     public ChatMember findById(Long userId) {
         return repository.findById(userId).orElse(null);
     }
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
 
     public ChatMember findByUsername(String username) {
         if (username == null || username.isBlank()) {
@@ -159,9 +53,4 @@ public class ChatMemberService {
     public long countTotalMembers() {
         return repository.count();
     }
-<<<<<<< HEAD
-=======
->>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
 }

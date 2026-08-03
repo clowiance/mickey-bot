@@ -23,6 +23,21 @@ class MenuOwnershipRegistryTest {
     }
 
     @Test
+    void confirmsOwnershipOnlyForTheUserWhoOpenedMenu() {
+        registry.register(-100L, 42, 777L);
+
+        assertThat(registry.isOwnedBy(-100L, 42, 777L)).isTrue();
+        assertThat(registry.isOwnedBy(-100L, 42, 888L)).isFalse();
+    }
+
+    @Test
+    void refusesToClaimMenuWithoutKnownOwner() {
+        // Меню, надіслані до рестарту, нічиї — редагувати їх на місці не можна,
+        // бо це змінило б розділ усім у чаті.
+        assertThat(registry.isOwnedBy(-100L, 999, 777L)).isFalse();
+    }
+
+    @Test
     void separatesMenusOfDifferentChats() {
         registry.register(-100L, 42, 777L);
         registry.register(-200L, 42, 888L);

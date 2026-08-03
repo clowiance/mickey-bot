@@ -10,6 +10,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
 import java.util.List;
+import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
@@ -62,5 +63,10 @@ public class CatalogCallbackHandler implements CallbackHandler {
 
     private InlineKeyboardButton button(String text, String callbackData) {
         return InlineKeyboardButton.builder().text(text).callbackData(callbackData).build();
+    }
+
+    @Override
+    public Set<String> namespaces() {
+        return Set.of("faq:specialties", "faq:prices", "catalog:");
     }
 }

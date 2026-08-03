@@ -3,7 +3,8 @@ package dev.clowiance.mickey.command.impl;
 import dev.clowiance.mickey.command.ICommand;
 import dev.clowiance.mickey.helper.TextHelper;
 import dev.clowiance.mickey.service.PermissionService;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -11,11 +12,19 @@ import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.time.Instant;
+
 @Component
-@RequiredArgsConstructor
 public class ClearCommand implements ICommand {
 
     private final PermissionService permissionService;
+    private final TaskScheduler taskScheduler;
+
+    public ClearCommand(PermissionService permissionService,
+                        @Qualifier("botTaskScheduler") TaskScheduler taskScheduler) {
+        this.permissionService = permissionService;
+        this.taskScheduler = taskScheduler;
+    }
 
     @Override
     public String getCommand() {
@@ -87,13 +96,12 @@ public class ClearCommand implements ICommand {
             notification.setText(String.format(TextHelper.CLEAR_SUCCESS, deletedCount));
             Message sent = bot.execute(notification);
 
-            new Thread(() -> {
+            taskScheduler.schedule(() -> {
                 try {
-                    Thread.sleep(3000);
                     bot.execute(new DeleteMessage(String.valueOf(chatId), sent.getMessageId()));
-                } catch (Exception ignored) {
+                } catch (TelegramApiException ignored) {
                 }
-            }).start();
+            }, Instant.now().plusSeconds(3));
         } catch (TelegramApiException ignored) {
         }
     }

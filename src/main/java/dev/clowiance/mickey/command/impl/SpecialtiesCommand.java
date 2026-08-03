@@ -43,7 +43,8 @@ public class SpecialtiesCommand implements ICommand {
             response.setText(text);
             response.setReplyMarkup(keyboardHelper.catalogLevelMenu(action));
             bot.execute(response);
-        } catch (TelegramApiException ignored) {
+        } catch (TelegramApiException exception) {
+            dev.clowiance.mickey.telegram.TelegramFailures.log("specialties-menu", message.getChatId(), exception);
         }
     }
 }

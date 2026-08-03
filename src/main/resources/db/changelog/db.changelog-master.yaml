@@ -1,0 +1,7 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/001-baseline.sql
+  - include:
+      file: db/changelog/002-production-hardening.sql
+  - include:
+      file: db/changelog/003-university-only-groups.sql

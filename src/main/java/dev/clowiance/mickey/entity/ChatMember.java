@@ -24,16 +24,6 @@ public class ChatMember {
     private String username;
     private String firstName;
 
-    @Builder.Default
-    private Integer warnCount = 0;
-
-    @Builder.Default
-    private Boolean muted = false;
-
-    @Builder.Default
-    private Boolean banned = false;
-
-    private LocalDateTime mutedUntil;
     private LocalDateTime joinedAt;
     private LocalDateTime lastMessageAt;
 }

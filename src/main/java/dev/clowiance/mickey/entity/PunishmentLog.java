@@ -22,8 +22,10 @@ public class PunishmentLog {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @jakarta.persistence.Column(columnDefinition = "integer")
     private Long id;
 
+    private Long chatId;
     private Long userId;
     private String username;
     private String type;

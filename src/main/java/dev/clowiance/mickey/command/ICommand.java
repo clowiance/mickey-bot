@@ -7,10 +7,19 @@ public interface ICommand {
     String getCommand();
     void execute(TelegramLongPollingBot bot, Message message, String args);
     boolean isAdminOnly();
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
+
+    default CommandAccess access() {
+        if (isDevOnly()) {
+            return CommandAccess.DEVELOPER;
+        }
+        if (isAdminOnly()) {
+            return CommandAccess.GROUP_ADMIN;
+        }
+        if (isInfoCommand() && !isGroupOnly()) {
+            return CommandAccess.PUBLIC_INFO;
+        }
+        return CommandAccess.GROUP_MEMBER;
+    }
 
     default boolean isDevOnly() {
         return false;
@@ -23,9 +32,4 @@ public interface ICommand {
     default boolean isInfoCommand() {
         return false;
     }
-<<<<<<< HEAD
-=======
->>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
 }

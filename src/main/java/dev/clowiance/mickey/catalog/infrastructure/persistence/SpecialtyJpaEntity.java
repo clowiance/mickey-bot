@@ -29,6 +29,7 @@ public class SpecialtyJpaEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(columnDefinition = "integer")
     private Long id;
 
     @Column(nullable = false, unique = true, length = 100)

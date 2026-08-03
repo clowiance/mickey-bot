@@ -1,6 +1,6 @@
 package dev.clowiance.mickey.community.presentation;
 
-import dev.clowiance.mickey.community.bootstrap.UkdStudyGroupData;
+import dev.clowiance.mickey.community.application.StudyGroupDirectory;
 import dev.clowiance.mickey.community.domain.StudyGroup;
 import dev.clowiance.mickey.community.domain.StudyGroupCategory;
 import org.springframework.stereotype.Component;
@@ -12,35 +12,19 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 @Component
+@lombok.RequiredArgsConstructor
 public class StudyGroupMessageRenderer {
+
+    private final StudyGroupDirectory directory;
 
     private static final String DIVIDER = "━━━━━━━━━━━━━━━━━━";
 
-    public String renderMenu() {
-        return "👥 <b>ЧАТИ НАВЧАЛЬНИХ ГРУП</b>\n"
-                + "<i>Усього груп: " + all().size() + "</i>\n"
-                + DIVIDER + "\n"
-                + "🎓 Університет (УНІК) — " + countOf(StudyGroupCategory.UNIVERSITY) + "\n"
-                + "🏫 Фаховий коледж — " + countOf(StudyGroupCategory.COLLEGE) + "\n"
-                + unspecifiedLine()
-                + "\nОбери, де ти навчаєшся 👇\n\n"
-                + "<i>Це закриті чати одногрупників — посилання відкриває заявку на вступ у групу.</i>";
-    }
-
-    public String renderCategory(StudyGroupCategory category) {
-        List<StudyGroup> groups = all().stream()
-                .filter(group -> group.category() == category)
-                .toList();
-
+    public String renderAll() {
         StringBuilder text = new StringBuilder();
-        text.append(category.getEmoji()).append(" <b>ЧАТИ ГРУП — ")
-                .append(category.getDisplayName().toUpperCase(java.util.Locale.forLanguageTag("uk-UA")))
-                .append("</b>\n")
-                .append("<i>").append(groupWord(groups.size())).append("</i>\n");
+        text.append("🎓 <b>ЧАТИ ГРУП УНІВЕРСИТЕТУ</b>\n")
+                .append("<i>").append(groupWord(all().size())).append("</i>\n");
 
-        // Групуємо за курсом: «1 курс» і «Після 9 класу» — різні набори людей,
-        // і плутати їх в одному списку означає гарантовані заявки не в той чат.
-        for (Map.Entry<String, List<StudyGroup>> byCourse : groupByCourse(groups).entrySet()) {
+        for (Map.Entry<String, List<StudyGroup>> byCourse : groupByCourse(all()).entrySet()) {
             text.append("\n<b>").append(escape(byCourse.getKey())).append("</b>\n");
             for (StudyGroup group : byCourse.getValue()) {
                 text.append("   • <a href=\"").append(group.inviteLink()).append("\">")
@@ -49,55 +33,14 @@ public class StudyGroupMessageRenderer {
         }
 
         text.append(DIVIDER).append("\n")
-                .append("ℹ️ Не знайшов свою групу — напиши кураторам або адміністрації чату.");
-        return text.toString();
-    }
-
-    public String renderAll() {
-        StringBuilder text = new StringBuilder();
-        text.append("👥 <b>УСІ ЧАТИ НАВЧАЛЬНИХ ГРУП</b>\n")
-                .append("<i>").append(groupWord(all().size())).append("</i>\n");
-
-        for (StudyGroupCategory category : StudyGroupCategory.values()) {
-            List<StudyGroup> groups = all().stream()
-                    .filter(group -> group.category() == category)
-                    .sorted(sortOrder())
-                    .toList();
-            if (groups.isEmpty()) {
-                continue;
-            }
-            text.append("\n").append(category.getEmoji()).append(" <b>")
-                    .append(escape(category.getDisplayName())).append("</b>\n");
-            for (StudyGroup group : groups) {
-                text.append("   • <a href=\"").append(group.inviteLink()).append("\">")
-                        .append(escape(group.specialty())).append("</a>");
-                if (group.hasCourse()) {
-                    text.append(" — <i>").append(escape(group.course())).append("</i>");
-                }
-                text.append("\n");
-            }
-        }
-
-        text.append(DIVIDER).append("\n")
                 .append("ℹ️ Посилання відкриває заявку на вступ у закритий чат групи.");
         return text.toString();
     }
 
-    /**
-     * Рядок з'являється, лише поки в таблиці є групи без категорії — інакше підсумок
-     * угорі не сходився б із двома кнопками вибору.
-     */
-    private String unspecifiedLine() {
-        int count = countOf(StudyGroupCategory.UNSPECIFIED);
-        return count == 0 ? "" : "❔ Без категорії — " + count + " (у списку «всі групи»)\n";
-    }
-
-    public int countOf(StudyGroupCategory category) {
-        return (int) all().stream().filter(group -> group.category() == category).count();
-    }
-
     private List<StudyGroup> all() {
-        return UkdStudyGroupData.entries();
+        return directory.findActive().stream()
+                .filter(group -> group.category() == StudyGroupCategory.UNIVERSITY)
+                .toList();
     }
 
     /**
@@ -116,7 +59,9 @@ public class StudyGroupMessageRenderer {
         return Comparator.comparingInt((String course) -> switch (course) {
             case "1 курс" -> 1;
             case "2 курс" -> 2;
-            case "Після 9 класу" -> 3;
+            case "3 курс" -> 3;
+            case "Після 11 класу" -> 4;
+            case "Після 9 класу" -> 5;
             default -> 9;
         }).thenComparing(Comparator.naturalOrder());
     }

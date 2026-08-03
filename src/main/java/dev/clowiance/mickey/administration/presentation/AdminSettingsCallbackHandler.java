@@ -8,7 +8,10 @@ import dev.clowiance.mickey.catalog.domain.EducationLevel;
 import dev.clowiance.mickey.catalog.domain.Specialty;
 import dev.clowiance.mickey.moderation.application.GroupMemberService;
 import dev.clowiance.mickey.moderation.domain.GroupMemberStatistics;
+import dev.clowiance.mickey.entity.ChatInfo;
+import dev.clowiance.mickey.entity.Report;
 import dev.clowiance.mickey.entity.enums.ReportStatus;
+import dev.clowiance.mickey.helper.TextHelper;
 import dev.clowiance.mickey.service.ReportService;
 import dev.clowiance.mickey.telegram.callback.CallbackContext;
 import dev.clowiance.mickey.telegram.callback.CallbackHandler;
@@ -21,6 +24,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
@@ -32,6 +36,8 @@ public class AdminSettingsCallbackHandler implements CallbackHandler {
     private final UniversityCatalogService catalogService;
     private final GroupMemberService groupMemberService;
     private final ReportService reportService;
+    private final dev.clowiance.mickey.helper.KeyboardHelper keyboardHelper;
+    private final dev.clowiance.mickey.repository.ChatInfoRepository chatInfoRepository;
 
     @Override
     public boolean supports(String callbackData) {
@@ -42,7 +48,13 @@ public class AdminSettingsCallbackHandler implements CallbackHandler {
                 || callbackData.equals("dev:groups")
                 || callbackData.equals("dev:catalog")
                 || callbackData.equals("admin:stats")
-                || callbackData.equals("dev:stats");
+                || callbackData.equals("dev:stats")
+                // Кнопки самих панелей і «Назад» до них раніше нікуди не вели.
+                || callbackData.equals("admin:panel")
+                || callbackData.equals("dev:panel")
+                || callbackData.equals("admin:reports")
+                || callbackData.equals("dev:reports")
+                || callbackData.equals("dev:chats");
     }
 
     @Override
@@ -55,6 +67,23 @@ public class AdminSettingsCallbackHandler implements CallbackHandler {
         }
 
         String data = context.data();
+        if ("admin:panel".equals(data)) {
+            return new CallbackView(TextHelper.ADMIN_PANEL_HEADER + "\n\nОбери розділ 👇",
+                    keyboardHelper.adminPanel());
+        }
+        if ("dev:panel".equals(data)) {
+            return new CallbackView(TextHelper.DEV_PANEL_HEADER + "\n\nОбери розділ 👇",
+                    keyboardHelper.devPanel());
+        }
+        if ("admin:reports".equals(data)) {
+            return new CallbackView(renderReports(context.chatId()), singleBack("admin:panel"));
+        }
+        if ("dev:reports".equals(data)) {
+            return new CallbackView(renderReports(null), singleBack("dev:panel"));
+        }
+        if ("dev:chats".equals(data)) {
+            return new CallbackView(renderChats(), singleBack("dev:panel"));
+        }
         if ("dev:groups".equals(data)) {
             return new CallbackView(renderGroups(), singleBack("dev:panel"));
         }
@@ -208,6 +237,47 @@ public class AdminSettingsCallbackHandler implements CallbackHandler {
                 + "🚨 Активних репортів: <b>" + reportService.list(null, ReportStatus.WAITING, true).size() + "</b>";
     }
 
+    /**
+     * @param chatIdScope {@code null} — зведення по всіх чатах для панелі розробника
+     */
+    private String renderReports(Long chatIdScope) {
+        List<Report> waiting = reportService.list(chatIdScope, ReportStatus.WAITING, true);
+        if (waiting.isEmpty()) {
+            return "🙌 <b>Скарги</b>\n\nАктивних скарг немає.";
+        }
+        StringBuilder text = new StringBuilder("🚨 <b>Скарги в очікуванні: ")
+                .append(waiting.size()).append("</b>\n\n");
+        waiting.stream().limit(10).forEach(report -> text
+                .append("• #").append(report.getId()).append(" на ")
+                .append(escape(report.getTargetUsername() == null
+                        ? String.valueOf(report.getTargetId())
+                        : "@" + report.getTargetUsername()))
+                .append("\n  ").append(escape(shorten(report.getReason() == null ? "без причини" : report.getReason())))
+                .append("\n"));
+        if (waiting.size() > 10) {
+            text.append("\nПоказано перші 10. Повний список і розгляд — /reports.");
+        } else {
+            text.append("\nРозгляд скарг — /reports.");
+        }
+        return text.toString();
+    }
+
+    private String renderChats() {
+        List<ChatInfo> chats = chatInfoRepository.findAll();
+        if (chats.isEmpty()) {
+            return "💬 Бот ще не доданий у жоден чат.";
+        }
+        StringBuilder text = new StringBuilder("💬 <b>Чати бота: ").append(chats.size()).append("</b>\n\n");
+        chats.stream().limit(30).forEach(chat -> text
+                .append(Boolean.TRUE.equals(chat.getAdminOk()) ? "✅ " : "⚠️ ")
+                .append("<code>").append(chat.getChatId()).append("</code>\n"));
+        if (chats.size() > 30) {
+            text.append("\nПоказано перші 30 із ").append(chats.size()).append(".");
+        }
+        text.append("\n⚠️ — боту бракує прав адміністратора.");
+        return text.toString();
+    }
+
     private CallbackView forbidden() {
         return new CallbackView("🔒 Недостатньо прав для цієї дії.", null);
     }
@@ -252,5 +322,10 @@ public class AdminSettingsCallbackHandler implements CallbackHandler {
 
     private String escape(String value) {
         return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+    }
+
+    @Override
+    public Set<String> namespaces() {
+        return Set.of("admin:", "dev:");
     }
 }

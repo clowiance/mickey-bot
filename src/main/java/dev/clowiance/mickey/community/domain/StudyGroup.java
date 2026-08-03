@@ -7,12 +7,19 @@ package dev.clowiance.mickey.community.domain;
  * @param note   службова примітка зі списку; користувачам не показується
  */
 public record StudyGroup(
+        Long id,
         StudyGroupCategory category,
         String specialty,
         String course,
         String inviteLink,
-        String note
+        String note,
+        boolean active
 ) {
+
+    public StudyGroup(StudyGroupCategory category, String specialty, String course,
+                      String inviteLink, String note) {
+        this(null, category, specialty, course, inviteLink, note, true);
+    }
 
     public boolean hasCourse() {
         return course != null && !course.isBlank();

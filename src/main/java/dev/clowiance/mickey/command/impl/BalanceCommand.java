@@ -26,8 +26,12 @@ public class BalanceCommand implements ICommand {
         return false;
     }
 
+    /**
+     * Свій баланс дивиться будь-хто — це користувацька команда поряд із /daily та /profile.
+     * Позначка «лише для розробників» відмовляла в ній усім учасникам, хоч /help її обіцяв.
+     */
     @Override
-    public boolean isDevOnly() {
+    public boolean isInfoCommand() {
         return true;
     }
 
@@ -44,7 +48,8 @@ public class BalanceCommand implements ICommand {
             sendMessage.setParseMode("HTML");
             sendMessage.setText(text);
             bot.execute(sendMessage);
-        } catch (TelegramApiException ignored) {
+        } catch (TelegramApiException exception) {
+            dev.clowiance.mickey.telegram.TelegramFailures.log("balance-reply", chatId, exception);
         }
     }
 }

@@ -4,6 +4,7 @@ import dev.clowiance.mickey.entity.EconomyAccount;
 import dev.clowiance.mickey.repository.EconomyAccountRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -12,6 +13,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class EconomyService {
 
     private static final long DAILY_MIN = 50L;

@@ -2,9 +2,7 @@ package dev.clowiance.mickey.community.domain;
 
 public enum StudyGroupCategory {
 
-    UNIVERSITY("🎓", "Університет (УНІК)"),
-    COLLEGE("🏫", "Фаховий коледж"),
-    UNSPECIFIED("❔", "Категорію не зазначено");
+    UNIVERSITY("🎓", "Університет");
 
     private final String emoji;
     private final String displayName;

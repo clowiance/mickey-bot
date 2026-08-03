@@ -4,14 +4,7 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 import java.util.ArrayList;
-=======
->>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
-=======
-import java.util.ArrayList;
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
 import java.util.List;
 
 @Component
@@ -27,24 +20,11 @@ public class KeyboardHelper {
         InlineKeyboardButton help = button("🤖 Команди", "menu:help");
 
         return InlineKeyboardMarkup.builder()
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
                 .keyboardRow(List.of(help))
                 .keyboardRow(List.of(specialties, prices))
                 .keyboardRow(List.of(admission))
                 .keyboardRow(List.of(groups, dorms))
                 .keyboardRow(List.of(faq))
-<<<<<<< HEAD
-=======
-                .keyboardRow(List.of(faq))
-                .keyboardRow(List.of(specialties, prices))
-                .keyboardRow(List.of(dorms))
-                .keyboardRow(List.of(help))
->>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
                 .build();
     }
 
@@ -68,10 +48,6 @@ public class KeyboardHelper {
 
     public InlineKeyboardMarkup backToMenu() {
         return InlineKeyboardMarkup.builder()
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
                 .keyboardRow(List.of(button("⬅️ Назад", "menu:main")))
                 .build();
     }
@@ -118,10 +94,6 @@ public class KeyboardHelper {
                 .keyboardRow(List.of(
                         button("❌ Закрити аудит", "logs_close")
                 ))
-<<<<<<< HEAD
-=======
-                .keyboardRow(List.of(button("⬅️ Назад до меню", "menu:main")))
-=======
                 .build();
     }
 
@@ -131,28 +103,24 @@ public class KeyboardHelper {
                         button("🎓 Бакалаврат", "catalog:" + action + ":bachelor"),
                         button("🎓 Магістратура", "catalog:" + action + ":master")))
                 .keyboardRow(List.of(button("⬅️ Назад", "menu:main")))
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
                 .build();
     }
 
     public InlineKeyboardMarkup devPanel() {
         InlineKeyboardButton reports = button("📋 Всі репорти", "dev:reports");
         InlineKeyboardButton chats = button("💬 Чати", "dev:chats");
-<<<<<<< HEAD
-=======
         InlineKeyboardButton groups = button("🧩 Керовані групи", "dev:groups");
         InlineKeyboardButton catalog = button("🎓 Каталог УКД", "dev:catalog");
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
         InlineKeyboardButton stats = button("📊 Статистика", "dev:stats");
+        InlineKeyboardButton globalChart = button("📈 Глобальна діаграма", "analytics:global");
+        InlineKeyboardButton ratingChart = button("🏆 Рейтинг крон", "analytics:rating");
         InlineKeyboardButton back = button("⬅️ Назад", "menu:main");
 
         return InlineKeyboardMarkup.builder()
                 .keyboardRow(List.of(reports, chats))
-<<<<<<< HEAD
-=======
                 .keyboardRow(List.of(groups, catalog))
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
                 .keyboardRow(List.of(stats))
+                .keyboardRow(List.of(globalChart, ratingChart))
                 .keyboardRow(List.of(back))
                 .build();
     }
@@ -160,22 +128,17 @@ public class KeyboardHelper {
     public InlineKeyboardMarkup adminPanel() {
         InlineKeyboardButton reports = button("📋 Репорти чату", "admin:reports");
         InlineKeyboardButton stats = button("📊 Статистика чату", "admin:stats");
-<<<<<<< HEAD
-=======
         InlineKeyboardButton settings = button("⚙️ Налаштування групи", "admin:settings");
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
+        InlineKeyboardButton groupChart = button("📈 Діаграма групи", "analytics:group");
+        InlineKeyboardButton activityChart = button("🗓 Активність 30 днів", "analytics:activity");
         InlineKeyboardButton back = button("⬅️ Назад", "menu:main");
 
         return InlineKeyboardMarkup.builder()
                 .keyboardRow(List.of(reports))
                 .keyboardRow(List.of(stats))
-<<<<<<< HEAD
-                .keyboardRow(List.of(back))
->>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
-=======
                 .keyboardRow(List.of(settings))
+                .keyboardRow(List.of(groupChart, activityChart))
                 .keyboardRow(List.of(back))
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
                 .build();
     }
 

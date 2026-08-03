@@ -16,7 +16,10 @@ public class WarnEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(columnDefinition = "integer")
     private Long id;
+
+    private Long chatId;
 
     @Column(nullable = false)
     private Long userId;

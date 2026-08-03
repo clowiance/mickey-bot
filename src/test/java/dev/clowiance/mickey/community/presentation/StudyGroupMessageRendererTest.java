@@ -2,7 +2,6 @@ package dev.clowiance.mickey.community.presentation;
 
 import dev.clowiance.mickey.community.bootstrap.UkdStudyGroupData;
 import dev.clowiance.mickey.community.domain.StudyGroup;
-import dev.clowiance.mickey.community.domain.StudyGroupCategory;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -11,35 +10,24 @@ class StudyGroupMessageRendererTest {
 
     private static final int TELEGRAM_MESSAGE_LIMIT = 4096;
 
-    private final StudyGroupMessageRenderer renderer = new StudyGroupMessageRenderer();
+    private final StudyGroupMessageRenderer renderer = new StudyGroupMessageRenderer(new dev.clowiance.mickey.community.application.StudyGroupDirectory() {
+        @Override public java.util.List<StudyGroup> findActive() { return UkdStudyGroupData.entries(); }
+        @Override public java.util.List<StudyGroup> findAll() { return UkdStudyGroupData.entries(); }
+        @Override public java.util.Optional<StudyGroup> findById(Long id) { return java.util.Optional.empty(); }
+        @Override public java.util.Optional<StudyGroup> findByInviteLink(String link) { return java.util.Optional.empty(); }
+        @Override public StudyGroup save(StudyGroup group) { return group; }
+        @Override public StudyGroup setActive(Long id, boolean active) { throw new UnsupportedOperationException(); }
+    });
 
     @Test
-    void showsHowManyGroupsEachCategoryHas() {
-        String menu = renderer.renderMenu();
+    void showsOnlyUniversityGroups() {
+        String menu = renderer.renderAll();
 
-        assertThat(menu).contains("Університет (УНІК) — 7")
-                .contains("Фаховий коледж — 11")
-                .contains("Усього груп: 19");
-    }
-
-    @Test
-    void listsOnlyGroupsOfRequestedCategory() {
-        String university = renderer.renderCategory(StudyGroupCategory.UNIVERSITY);
-
-        assertThat(university).contains("Логістика").contains("Право");
-        assertThat(university).doesNotContain("Хореографія").doesNotContain("Юридичне діловодство");
-    }
-
-    @Test
-    void splitsCollegeGroupsByEntryBase() {
-        String college = renderer.renderCategory(StudyGroupCategory.COLLEGE);
-
-        assertThat(college).contains("2 курс")
-                .contains("Після 9 класу")
-                .contains("Курс не вказано");
-        assertThat(college.indexOf("2 курс"))
-                .as("курси йдуть по порядку, «не вказано» — наприкінці")
-                .isLessThan(college.indexOf("Курс не вказано"));
+        assertThat(menu).contains("ЧАТИ ГРУП УНІВЕРСИТЕТУ")
+                .contains("8 груп")
+                .contains("Логістика")
+                .doesNotContain("УНІК")
+                .doesNotContain("коледж");
     }
 
     @Test
@@ -54,20 +42,7 @@ class StudyGroupMessageRendererTest {
     }
 
     @Test
-    void separatesUniversityFromCollegeInFullList() {
-        String all = renderer.renderAll();
-
-        assertThat(all.indexOf("Університет (УНІК)")).isLessThan(all.indexOf("Фаховий коледж"));
-    }
-
-    @Test
     void keepsEveryViewWithinTelegramMessageLimit() {
-        assertThat(renderer.renderMenu().length()).isLessThanOrEqualTo(TELEGRAM_MESSAGE_LIMIT);
         assertThat(renderer.renderAll().length()).isLessThanOrEqualTo(TELEGRAM_MESSAGE_LIMIT);
-        for (StudyGroupCategory category : StudyGroupCategory.values()) {
-            assertThat(renderer.renderCategory(category).length())
-                    .as("розділ %s", category)
-                    .isLessThanOrEqualTo(TELEGRAM_MESSAGE_LIMIT);
-        }
     }
 }

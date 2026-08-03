@@ -59,7 +59,8 @@ public class LogsCommand implements ICommand {
             sendMessage.setText(warningText);
             sendMessage.setReplyMarkup(markup);
             bot.execute(sendMessage);
-        } catch (TelegramApiException ignored) {
+        } catch (TelegramApiException exception) {
+            dev.clowiance.mickey.telegram.TelegramFailures.log("logs-menu", message.getChatId(), exception);
         }
     }
 }

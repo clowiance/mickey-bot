@@ -9,5 +9,6 @@ import java.util.List;
 @Repository
 public interface WarnRepository extends JpaRepository<WarnEntity, Long> {
     List<WarnEntity> findByUserIdAndActiveTrue(Long userId);
+    List<WarnEntity> findByChatIdAndUserIdAndActiveTrue(Long chatId, Long userId);
     List<WarnEntity> findByActiveTrue();
 }

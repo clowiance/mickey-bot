@@ -22,18 +22,23 @@ public class DevCommandService {
     private final PunishmentLogRepository punishmentLogRepository;
     private final EconomyAccountRepository economyAccountRepository;
     private final BotProperties botProperties;
+    private final dev.clowiance.mickey.helper.KeyboardHelper keyboardHelper;
+    private final dev.clowiance.mickey.telegram.menu.MenuMessenger menuMessenger;
 
+    /**
+     * Панель розробника відкривається кнопками {@code KeyboardHelper#devPanel()} — після
+     * злиття гілок вони лишилися без жодного виклику, і /dev віддавав самий текст.
+     */
     public void handleDevPanel(TelegramLongPollingBot bot, Message message) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(TextHelper.DEV_PANEL_HEADER).append("\n\n");
-        sb.append("💬 Чатів у базі: ").append(chatInfoRepository.count()).append("\n");
-        sb.append("👥 Користувачів у базі: ").append(chatMemberRepository.count()).append("\n");
-        sb.append("📋 Записів покарань: ").append(punishmentLogRepository.count()).append("\n");
-        sb.append("💱 Економічних рахунків: ").append(economyAccountRepository.count()).append("\n");
-        sb.append("🧑‍💻 Розробники: ").append(botProperties.getDevIds()).append("\n");
-        sb.append("🤖 Юзернейм бота: @").append(botProperties.getUsername()).append("\n\n");
-        sb.append("ℹ️ Повне керування економікою: /economy");
-        reply(bot, message, sb.toString());
+        String text = TextHelper.DEV_PANEL_HEADER + "\n\n"
+                + "💬 Чатів у базі: " + chatInfoRepository.count() + "\n"
+                + "👥 Користувачів у базі: " + chatMemberRepository.count() + "\n"
+                + "📋 Записів покарань: " + punishmentLogRepository.count() + "\n"
+                + "💱 Економічних рахунків: " + economyAccountRepository.count() + "\n"
+                + "🤖 Юзернейм бота: @" + botProperties.getUsername() + "\n\n"
+                + "Обери розділ 👇";
+        Long ownerId = message.getFrom() != null ? message.getFrom().getId() : null;
+        menuMessenger.sendMenu(bot, message.getChatId(), ownerId, text, keyboardHelper.devPanel());
     }
 
     private void reply(TelegramLongPollingBot bot, Message message, String text) {
@@ -43,7 +48,8 @@ public class DevCommandService {
             sendMessage.setParseMode("HTML");
             sendMessage.setText(text);
             bot.execute(sendMessage);
-        } catch (TelegramApiException ignored) {
+        } catch (TelegramApiException exception) {
+            dev.clowiance.mickey.telegram.TelegramFailures.log("dev-command-reply", message.getChatId(), exception);
         }
     }
 }

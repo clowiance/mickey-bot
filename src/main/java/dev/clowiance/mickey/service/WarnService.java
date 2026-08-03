@@ -19,8 +19,13 @@ public class WarnService {
         return warnRepository.findByUserIdAndActiveTrue(userId);
     }
 
-    public WarnEntity addWarn(Long userId, String reason, Long adminId) {
+    public List<WarnEntity> getActiveWarns(Long chatId, Long userId) {
+        return warnRepository.findByChatIdAndUserIdAndActiveTrue(chatId, userId);
+    }
+
+    public WarnEntity addWarn(Long chatId, Long userId, String reason, Long adminId) {
         WarnEntity warn = WarnEntity.builder()
+                .chatId(chatId)
                 .userId(userId)
                 .adminId(adminId)
                 .reason(reason)
@@ -37,7 +42,8 @@ public class WarnService {
         });
     }
 
-    @Scheduled(fixedRate = 60 * 60 * 1000L)
+    @Scheduled(fixedRateString = "${bot.warn-cleanup-ms:3600000}",
+            initialDelayString = "${bot.scheduler-initial-delay-ms:30000}")
     public void checkExpiredWarns() {
         LocalDateTime threshold = LocalDateTime.now().minusWeeks(2);
         List<WarnEntity> activeWarns = warnRepository.findByActiveTrue();

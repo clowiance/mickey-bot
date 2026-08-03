@@ -197,7 +197,8 @@ public class EconomyCommandService {
             sendMessage.setParseMode("HTML");
             sendMessage.setText(text);
             bot.execute(sendMessage);
-        } catch (TelegramApiException ignored) {
+        } catch (TelegramApiException exception) {
+            dev.clowiance.mickey.telegram.TelegramFailures.log("economy-reply", message.getChatId(), exception);
         }
     }
 }

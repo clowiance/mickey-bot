@@ -1,42 +1,24 @@
 package dev.clowiance.mickey.service;
 
 import dev.clowiance.mickey.entity.ChatInfo;
-<<<<<<< HEAD
-<<<<<<< HEAD
 import dev.clowiance.mickey.helper.TextHelper;
-=======
->>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
-=======
-import dev.clowiance.mickey.helper.TextHelper;
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
 import dev.clowiance.mickey.repository.ChatInfoRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.GetChatMember;
-<<<<<<< HEAD
-<<<<<<< HEAD
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-=======
->>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
-=======
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
 import org.telegram.telegrambots.meta.api.objects.chatmember.ChatMemberAdministrator;
 import org.telegram.telegrambots.meta.api.objects.chatmember.ChatMemberOwner;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 import java.lang.reflect.Method;
-=======
->>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
-=======
-import java.lang.reflect.Method;
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 @Slf4j
 @Service
@@ -44,48 +26,52 @@ import java.util.List;
 public class PermissionService {
 
     private final ChatInfoRepository chatInfoRepository;
-    private Long botUserId;
+    private volatile Long botUserId;
+
+    private static final long BOT_PERMISSION_TTL_NANOS = Duration.ofMinutes(5).toNanos();
+    private static final long USER_ADMIN_TTL_NANOS = Duration.ofMinutes(2).toNanos();
+
+    private final ConcurrentMap<Long, PermissionCacheEntry> botPermissionCache = new ConcurrentHashMap<>();
+    private final ConcurrentMap<ChatUserKey, PermissionCacheEntry> userAdminCache = new ConcurrentHashMap<>();
 
     public void setBotUserId(Long botUserId) {
         this.botUserId = botUserId;
     }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
     public boolean validateBotPermissions(TelegramLongPollingBot bot, Long chatId) {
+        return validateBotPermissions(bot, chatId, false);
+    }
+
+    public boolean refreshBotPermissions(TelegramLongPollingBot bot, Long chatId) {
+        return validateBotPermissions(bot, chatId, true);
+    }
+
+    private boolean validateBotPermissions(TelegramLongPollingBot bot, Long chatId, boolean forceRefresh) {
+        PermissionCacheEntry cached = botPermissionCache.get(chatId);
+        if (!forceRefresh && cached != null && cached.isFresh(BOT_PERMISSION_TTL_NANOS)) {
+            return cached.allowed();
+        }
         if (botUserId == null) {
             try {
                 var me = bot.execute(new org.telegram.telegrambots.meta.api.methods.GetMe());
                 botUserId = me.getId();
             } catch (TelegramApiException e) {
-                return false;
+                log.warn("Не вдалося отримати Telegram ID бота", e);
+                return fallbackPermission(chatId, cached);
             }
-<<<<<<< HEAD
-=======
-    public boolean isBotAdmin(TelegramLongPollingBot bot, Long chatId) {
-        if (botUserId == null) {
-            return false;
->>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
         }
         try {
             GetChatMember gcm = new GetChatMember();
             gcm.setChatId(chatId);
             gcm.setUserId(botUserId);
             var member = bot.execute(gcm);
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
             boolean hasRights = false;
             if (member instanceof ChatMemberOwner) {
                 hasRights = true;
             } else if (member instanceof ChatMemberAdministrator administrator) {
                 hasRights = hasFullRights(administrator);
             }
+            botPermissionCache.put(chatId, PermissionCacheEntry.now(hasRights));
             updateAdminStatus(chatId, hasRights);
             if (!hasRights && shouldWarn(chatId)) {
                 sendAdminRequiredNotice(bot, chatId);
@@ -93,26 +79,11 @@ public class PermissionService {
             }
             return hasRights;
         } catch (TelegramApiException e) {
-            updateAdminStatus(chatId, false);
-            if (shouldWarn(chatId)) {
-                sendAdminRequiredNotice(bot, chatId);
-                updateWarningTime(chatId);
-            }
-<<<<<<< HEAD
-=======
-            return member instanceof ChatMemberAdministrator || member instanceof ChatMemberOwner;
-        } catch (TelegramApiException e) {
->>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
-            return false;
+            log.warn("Не вдалося оновити права бота в чаті {}. Використовую останній відомий стан", chatId, e);
+            return fallbackPermission(chatId, cached);
         }
     }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
     public boolean isBotAdmin(TelegramLongPollingBot bot, Long chatId) {
         return validateBotPermissions(bot, chatId);
     }
@@ -121,35 +92,35 @@ public class PermissionService {
         if (userId == null) {
             return false;
         }
-<<<<<<< HEAD
-=======
-    public boolean isChatAdmin(TelegramLongPollingBot bot, Long chatId, Long userId) {
->>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
+        ChatUserKey key = new ChatUserKey(chatId, userId);
+        PermissionCacheEntry cached = userAdminCache.get(key);
+        if (cached != null && cached.isFresh(USER_ADMIN_TTL_NANOS)) {
+            return cached.allowed();
+        }
         try {
             GetChatMember gcm = new GetChatMember();
             gcm.setChatId(chatId);
             gcm.setUserId(userId);
             var member = bot.execute(gcm);
-<<<<<<< HEAD
-<<<<<<< HEAD
-            return member instanceof ChatMemberOwner || member instanceof ChatMemberAdministrator;
-=======
-            return member instanceof ChatMemberAdministrator || member instanceof ChatMemberOwner;
->>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
-=======
-            return member instanceof ChatMemberOwner || member instanceof ChatMemberAdministrator;
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
+            boolean isAdmin = member instanceof ChatMemberOwner || member instanceof ChatMemberAdministrator;
+            userAdminCache.put(key, PermissionCacheEntry.now(isAdmin));
+            return isAdmin;
         } catch (TelegramApiException e) {
-            return false;
+            log.warn("Не вдалося перевірити адміністратора {} у чаті {}", userId, chatId, e);
+            return cached != null && cached.allowed();
         }
     }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
+    private boolean fallbackPermission(Long chatId, PermissionCacheEntry cached) {
+        if (cached != null) {
+            return cached.allowed();
+        }
+        return chatInfoRepository.findById(chatId)
+                .map(ChatInfo::getAdminOk)
+                .map(Boolean.TRUE::equals)
+                .orElse(false);
+    }
+
     private static final List<String> REQUIRED_RIGHTS = List.of(
             "getCanDeleteMessages",
             "getCanRestrictMembers",
@@ -183,11 +154,6 @@ public class PermissionService {
         return true;
     }
 
-<<<<<<< HEAD
-=======
->>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
     public void ensureChatRecorded(Long chatId) {
         if (!chatInfoRepository.existsById(chatId)) {
             ChatInfo info = ChatInfo.builder()
@@ -199,38 +165,12 @@ public class PermissionService {
         }
     }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-    public ChatInfo getChatInfo(Long chatId) {
-        return chatInfoRepository.findById(chatId).orElse(null);
-    }
-
-    public void recordBotJoin(Long chatId, int date) {
-        ChatInfo info = chatInfoRepository.findById(chatId).orElseGet(() ->
-                ChatInfo.builder().chatId(chatId).build());
-        info.setBotJoinedAt((long) date);
-        info.setAdminOk(true);
-        chatInfoRepository.save(info);
-    }
-
->>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
     public boolean shouldWarn(Long chatId) {
         ChatInfo info = chatInfoRepository.findById(chatId).orElse(null);
         if (info == null) {
             return true;
         }
-<<<<<<< HEAD
-<<<<<<< HEAD
         return info.getLastWarningAt() == null || info.getLastWarningAt().isBefore(LocalDateTime.now().minusMinutes(5));
-=======
-        return info.getLastWarningAt() == null || info.getLastWarningAt().isBefore(LocalDateTime.now().minusMinutes(10));
->>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
-=======
-        return info.getLastWarningAt() == null || info.getLastWarningAt().isBefore(LocalDateTime.now().minusMinutes(5));
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
     }
 
     public void updateWarningTime(Long chatId) {
@@ -251,10 +191,6 @@ public class PermissionService {
         return chatInfoRepository.findAll();
     }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
     private void sendAdminRequiredNotice(TelegramLongPollingBot bot, Long chatId) {
         try {
             SendMessage sendMessage = new SendMessage();
@@ -262,25 +198,21 @@ public class PermissionService {
             sendMessage.setParseMode("HTML");
             sendMessage.setText(TextHelper.ADMIN_REQUIRED);
             bot.execute(sendMessage);
-        } catch (TelegramApiException ignored) {
+        } catch (TelegramApiException e) {
+            log.warn("Не вдалося надіслати нагадування про права бота в чат {}", chatId, e);
         }
-<<<<<<< HEAD
-=======
-    public String formatChatsList() {
-        List<ChatInfo> chats = findAllChats();
-        if (chats.isEmpty()) {
-            return "💬 Немає записаних чатів.";
+    }
+
+    private record ChatUserKey(Long chatId, Long userId) {
+    }
+
+    private record PermissionCacheEntry(boolean allowed, long checkedAtNanos) {
+        private static PermissionCacheEntry now(boolean allowed) {
+            return new PermissionCacheEntry(allowed, System.nanoTime());
         }
-        StringBuilder sb = new StringBuilder();
-        sb.append("💬 <b>Список чатів</b>\n\n");
-        for (ChatInfo chat : chats) {
-            sb.append("• ").append(chat.getChatId())
-                    .append(" | Адмін: ").append(Boolean.TRUE.equals(chat.getAdminOk()) ? "✅" : "❌")
-                    .append("\n");
+
+        private boolean isFresh(long ttlNanos) {
+            return System.nanoTime() - checkedAtNanos < ttlNanos;
         }
-        return sb.toString();
->>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
     }
 }

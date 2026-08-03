@@ -5,19 +5,9 @@ import dev.clowiance.mickey.service.UserCommandService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
-<<<<<<< HEAD
-<<<<<<< HEAD
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-=======
-import org.telegram.telegrambots.meta.api.objects.Message;
->>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
-=======
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.Message;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
 
 @Component
 @RequiredArgsConstructor
@@ -32,30 +22,26 @@ public class ScheduleCommand implements ICommand {
 
     @Override
     public boolean isAdminOnly() {
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
         return false;
     }
 
     @Override
     public boolean isGroupOnly() {
         return false;
-<<<<<<< HEAD
-=======
+    }
+
+    /**
+     * Команда працює лише в ЛС, тому має бути дозволена в приватному чаті. Без цієї позначки
+     * CommandManager відхиляв її як «доступну лише в групах», а сама команда — як «лише в ЛС»,
+     * і запланувати розсилку не міг ніхто, крім розробників.
+     */
+    @Override
+    public boolean isInfoCommand() {
         return true;
->>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
     }
 
     @Override
     public void execute(TelegramLongPollingBot bot, Message message, String args) {
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
         if (message.getChat().isGroupChat() || message.getChat().isSuperGroupChat()) {
             try {
                 SendMessage sendMessage = new SendMessage();
@@ -63,16 +49,12 @@ public class ScheduleCommand implements ICommand {
                 sendMessage.setParseMode("HTML");
                 sendMessage.setText("🔒 Ця команда доступна лише в особистих повідомленнях з ботом.");
                 bot.execute(sendMessage);
-            } catch (TelegramApiException ignored) {
+            } catch (TelegramApiException exception) {
+                dev.clowiance.mickey.telegram.TelegramFailures.log("schedule-private-only", message.getChatId(), exception);
             }
             return;
         }
 
-<<<<<<< HEAD
-=======
->>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
-=======
->>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
         userCommandService.handleSchedule(bot, message, args);
     }
 }

@@ -66,7 +66,8 @@ public class BroadcastAllCommand implements ICommand {
             response.setParseMode("HTML");
             response.setText(text);
             bot.execute(response);
-        } catch (TelegramApiException ignored) {
+        } catch (TelegramApiException exception) {
+            dev.clowiance.mickey.telegram.TelegramFailures.log("broadcast-all-reply", message.getChatId(), exception);
         }
     }
 }
