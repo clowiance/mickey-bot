@@ -2,11 +2,15 @@ package dev.clowiance.mickey.command.impl;
 
 import dev.clowiance.mickey.command.ICommand;
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
 import dev.clowiance.mickey.service.ReportCommandService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.objects.Message;
+<<<<<<< HEAD
 =======
 import dev.clowiance.mickey.service.ReportService;
 import dev.clowiance.mickey.helper.TextHelper;
@@ -17,16 +21,22 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 >>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
 
 @Component
 @RequiredArgsConstructor
 public class ReportCommand implements ICommand {
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     private final ReportCommandService reportCommandService;
 =======
     private final ReportService reportService;
 >>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
+=======
+    private final ReportCommandService reportCommandService;
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
 
     @Override
     public String getCommand() {
@@ -40,6 +50,9 @@ public class ReportCommand implements ICommand {
 
     @Override
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
     public boolean isGroupOnly() {
         return true;
     }
@@ -47,6 +60,7 @@ public class ReportCommand implements ICommand {
     @Override
     public void execute(TelegramLongPollingBot bot, Message message, String args) {
         reportCommandService.handleCreate(bot, message, args);
+<<<<<<< HEAD
 =======
     public void execute(TelegramLongPollingBot bot, Message message, String args) {
         Long chatId = message.getChatId();
@@ -99,5 +113,7 @@ public class ReportCommand implements ICommand {
         } catch (TelegramApiException ignored) {
         }
 >>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
     }
 }

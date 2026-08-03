@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Run Mickey Bot",
+      "request": "launch",
+      "mainClass": "dev.clowiance.mickey.MickeyBotApplication",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    }
+  ]
+}

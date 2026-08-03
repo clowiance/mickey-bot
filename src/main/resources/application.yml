@@ -2,13 +2,15 @@ bot:
   username: ${BOT_USERNAME}
   token: ${BOT_TOKEN}
   dev-ids: ${BOT_DEV_IDS}
-  target-group-username: ${BOT_TARGET_GROUP_USERNAME}
 
 spring:
+  config:
+    import: optional:file:.env[.properties]
   datasource:
     url: jdbc:sqlite:mickey.db
     driver-class-name: org.sqlite.JDBC
   jpa:
+    open-in-view: false
     database-platform: org.hibernate.community.dialect.SQLiteDialect
     hibernate:
       ddl-auto: update

@@ -17,7 +17,7 @@ import java.io.InputStream;
 @Component
 public class MenuImageSender {
 
-    public void sendMenuPhoto(TelegramLongPollingBot bot, Long chatId, String text, InlineKeyboardMarkup keyboard) {
+    public Integer sendMenuPhoto(TelegramLongPollingBot bot, Long chatId, String text, InlineKeyboardMarkup keyboard) {
         String safeText = text != null && text.length() > 1024 ? text.substring(0, 1021) + "..." : text;
         try {
             SendPhoto sendPhoto = new SendPhoto();
@@ -32,8 +32,7 @@ public class MenuImageSender {
             if (imgFile.exists()) {
                 try (InputStream is = imgFile.getInputStream()) {
                     sendPhoto.setPhoto(new InputFile(is, "menu.png"));
-                    bot.execute(sendPhoto);
-                    return;
+                    return bot.execute(sendPhoto).getMessageId();
                 } catch (IOException e) {
                     log.error("Помилка читання images/menu.png", e);
                 }
@@ -43,21 +42,20 @@ public class MenuImageSender {
             if (fallbackFile.exists()) {
                 try (InputStream is = fallbackFile.getInputStream()) {
                     sendPhoto.setPhoto(new InputFile(is, "menu.png"));
-                    bot.execute(sendPhoto);
-                    return;
+                    return bot.execute(sendPhoto).getMessageId();
                 } catch (IOException e) {
                     log.error("Помилка читання menu.png", e);
                 }
             }
 
-            sendHtml(bot, chatId, text, keyboard);
+            return sendHtml(bot, chatId, text, keyboard);
         } catch (TelegramApiException e) {
             log.error("меседж з фото хес нот бін сент", e);
-            sendHtml(bot, chatId, text, keyboard);
+            return sendHtml(bot, chatId, text, keyboard);
         }
     }
 
-    public void sendHtml(TelegramLongPollingBot bot, Long chatId, String text, InlineKeyboardMarkup keyboard) {
+    public Integer sendHtml(TelegramLongPollingBot bot, Long chatId, String text, InlineKeyboardMarkup keyboard) {
         try {
             SendMessage sendMessage = new SendMessage();
             sendMessage.setChatId(chatId);
@@ -66,9 +64,10 @@ public class MenuImageSender {
             if (keyboard != null) {
                 sendMessage.setReplyMarkup(keyboard);
             }
-            bot.execute(sendMessage);
+            return bot.execute(sendMessage).getMessageId();
         } catch (TelegramApiException e) {
             log.error("меседж хес нот бін сент", e);
+            return null;
         }
     }
 }

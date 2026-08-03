@@ -27,6 +27,11 @@ public class BalanceCommand implements ICommand {
     }
 
     @Override
+    public boolean isDevOnly() {
+        return true;
+    }
+
+    @Override
     public void execute(TelegramLongPollingBot bot, Message message, String args) {
         long balance = economyService.getBalance(message.getFrom().getId());
         send(bot, message.getChatId(), String.format(TextHelper.ECONOMY_BALANCE_INFO, balance));

@@ -25,6 +25,9 @@ public class StatsCommand implements ICommand {
 
     @Override
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
     public boolean isGroupOnly() {
         return true;
     }
@@ -32,9 +35,12 @@ public class StatsCommand implements ICommand {
     @Override
     public void execute(TelegramLongPollingBot bot, Message message, String args) {
         adminCommandService.handleStats(bot, message, args);
+<<<<<<< HEAD
 =======
     public void execute(TelegramLongPollingBot bot, Message message, String args) {
         adminCommandService.handleStats(bot, message);
 >>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
     }
 }

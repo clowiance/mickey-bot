@@ -1,1 +1,7 @@
 .env
+
+# Local Gradle and IDE build output
+.gradle/
+build/
+bin/
+mickey.db

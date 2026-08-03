@@ -2,10 +2,14 @@ package dev.clowiance.mickey.service;
 
 import dev.clowiance.mickey.entity.Report;
 <<<<<<< HEAD
+<<<<<<< HEAD
 import dev.clowiance.mickey.entity.enums.ReportStatus;
 =======
 import dev.clowiance.mickey.helper.TextHelper;
 >>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
+=======
+import dev.clowiance.mickey.entity.enums.ReportStatus;
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
 import dev.clowiance.mickey.repository.ReportRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -13,9 +17,13 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 <<<<<<< HEAD
+<<<<<<< HEAD
 import java.util.Optional;
 =======
 >>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
+=======
+import java.util.Optional;
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
 
 @Service
 @RequiredArgsConstructor
@@ -24,23 +32,32 @@ public class ReportService {
     private final ReportRepository repository;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
     public Report create(Long chatId, String chatTitle, String chatUsername, Long reporterId,
                          String reporterUsername, Long targetId, String targetUsername, String reason) {
         Report report = Report.builder()
                 .chatId(chatId)
                 .chatTitle(chatTitle)
                 .chatUsername(chatUsername)
+<<<<<<< HEAD
 =======
     public void createReport(Long chatId, Long reporterId, String reporterUsername, Long targetId, String targetUsername, String reason) {
         Report report = Report.builder()
                 .chatId(chatId)
 >>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
                 .reporterId(reporterId)
                 .reporterUsername(reporterUsername)
                 .targetId(targetId)
                 .targetUsername(targetUsername)
                 .reason(reason)
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
                 .status(ReportStatus.WAITING)
                 .createdAt(LocalDateTime.now())
                 .build();
@@ -107,6 +124,7 @@ public class ReportService {
             return "https://t.me/c/" + internal + "/1";
         }
         return "недоступне (приватна група без публічного посилання)";
+<<<<<<< HEAD
 =======
                 .status("PENDING")
                 .createdAt(LocalDateTime.now())
@@ -162,5 +180,7 @@ public class ReportService {
         }
         return sb.toString();
 >>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
     }
 }

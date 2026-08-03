@@ -1,5 +1,7 @@
 package dev.clowiance.mickey.scheduler;
 
+import dev.clowiance.mickey.administration.application.ChatAdministrationService;
+import dev.clowiance.mickey.administration.domain.ChatFeature;
 import dev.clowiance.mickey.entity.ScheduledBroadcast;
 import dev.clowiance.mickey.handler.MickeyHandler;
 import dev.clowiance.mickey.service.BroadcastService;
@@ -16,19 +18,27 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 public class BroadcastScheduler {
 
     private final BroadcastService broadcastService;
+    private final ChatAdministrationService chatAdministrationService;
     private final MickeyHandler bot;
 
     @Scheduled(fixedDelay = 60000)
     public void sendDueBroadcasts() {
         for (ScheduledBroadcast broadcast : broadcastService.findDue()) {
+            if (!chatAdministrationService.isEnabled(broadcast.getChatId(), ChatFeature.BROADCASTS)) {
+                continue;
+            }
             try {
                 SendMessage message = new SendMessage();
                 message.setChatId(broadcast.getChatId());
+<<<<<<< HEAD
 <<<<<<< HEAD
                 message.setText("📢 <b>Новини</b>\n\n" + broadcast.getText());
 =======
                 message.setText("📢 <b>Новини приймальної комісії</b>\n\n" + broadcast.getText());
 >>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
+=======
+                message.setText("📢 <b>Новини</b>\n\n" + broadcast.getText());
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
                 message.setParseMode("HTML");
                 bot.execute(message);
                 broadcastService.markSent(broadcast);

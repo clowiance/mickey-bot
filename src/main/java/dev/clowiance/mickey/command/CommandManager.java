@@ -14,9 +14,13 @@ import java.util.Map;
 @Component
 public class CommandManager {
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 =======
 >>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
+=======
+
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
     private final Map<String, ICommand> commands = new HashMap<>();
 
     public CommandManager(List<ICommand> commandList) {
@@ -26,36 +30,51 @@ public class CommandManager {
     }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
     public ICommand find(String command) {
         return commands.get(command);
     }
 
     public void process(String command, TelegramLongPollingBot bot, Message message, String args,
                         boolean isChatAdmin, boolean isDev) {
+<<<<<<< HEAD
 =======
     public void process(String command, TelegramLongPollingBot bot, Message message, String args, boolean isAdmin) {
 >>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
         ICommand cmd = commands.get(command);
         if (cmd == null) {
             return;
         }
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
         if (cmd.isDevOnly() && !isDev) {
             sendDenied(bot, message, TextHelper.NOT_DEV);
             return;
         }
         if (cmd.isAdminOnly() && !isChatAdmin && !isDev) {
             sendDenied(bot, message, TextHelper.NOT_ADMIN);
+<<<<<<< HEAD
 =======
         if (cmd.isAdminOnly() && !isAdmin) {
             sendNotAdmin(bot, message);
 >>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
             return;
         }
         cmd.execute(bot, message, args);
     }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
     public void processPrivate(String command, TelegramLongPollingBot bot, Message message, String args,
                                boolean isDev) {
         ICommand cmd = commands.get(command);
@@ -82,18 +101,25 @@ public class CommandManager {
     }
 
     private void sendDenied(TelegramLongPollingBot bot, Message message, String text) {
+<<<<<<< HEAD
 =======
     private void sendNotAdmin(TelegramLongPollingBot bot, Message message) {
 >>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
         try {
             SendMessage sendMessage = new SendMessage();
             sendMessage.setChatId(message.getChatId());
             sendMessage.setParseMode("HTML");
 <<<<<<< HEAD
+<<<<<<< HEAD
             sendMessage.setText(text);
 =======
             sendMessage.setText(TextHelper.NOT_ADMIN);
 >>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
+=======
+            sendMessage.setText(text);
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
             bot.execute(sendMessage);
         } catch (TelegramApiException ignored) {
         }

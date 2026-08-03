@@ -3,6 +3,9 @@ package dev.clowiance.mickey.handler;
 import dev.clowiance.mickey.command.CommandManager;
 import dev.clowiance.mickey.config.BotProperties;
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
 import dev.clowiance.mickey.service.ActivityAuditService;
 import dev.clowiance.mickey.service.PermissionService;
 import dev.clowiance.mickey.service.ChatMemberService;
@@ -13,6 +16,7 @@ import dev.clowiance.mickey.helper.KeyboardHelper;
 import dev.clowiance.mickey.helper.KeywordHelper;
 import dev.clowiance.mickey.helper.TextHelper;
 import dev.clowiance.mickey.handler.helper.MenuImageSender;
+<<<<<<< HEAD
 import dev.clowiance.mickey.handler.helper.MenuMediaUpdater;
 =======
 import dev.clowiance.mickey.entity.ChatInfo;
@@ -24,19 +28,29 @@ import dev.clowiance.mickey.helper.KeyboardHelper;
 import dev.clowiance.mickey.helper.KeywordHelper;
 import dev.clowiance.mickey.helper.TextHelper;
 >>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
+=======
+import dev.clowiance.mickey.telegram.callback.CallbackContext;
+import dev.clowiance.mickey.telegram.callback.CallbackDispatcher;
+import dev.clowiance.mickey.telegram.callback.CallbackView;
+import dev.clowiance.mickey.telegram.menu.MenuMessenger;
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 <<<<<<< HEAD
+<<<<<<< HEAD
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.MaybeInaccessibleMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
+<<<<<<< HEAD
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.util.List;
@@ -53,6 +67,12 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 >>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
+=======
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+
+import java.util.List;
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
 import java.util.Optional;
 
 @Slf4j
@@ -63,23 +83,35 @@ public class MickeyHandler extends TelegramLongPollingBot {
     private final BotProperties botProperties;
     private final ChatMemberService chatMemberService;
 <<<<<<< HEAD
+<<<<<<< HEAD
     private final MessageService messageService;
 =======
     private final MessageModerationService messageModerationService;
 >>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
+=======
+    private final MessageService messageService;
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
     private final CommandManager commandManager;
     private final KeywordHelper keywordHelper;
     private final KeyboardHelper keyboardHelper;
     private final PermissionService permissionService;
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
     private final ReportCommandService reportCommandService;
     private final LogsCallbackService logsCallbackService;
     private final ActivityAuditService activityAuditService;
     private final MenuImageSender menuImageSender;
+<<<<<<< HEAD
     private final MenuMediaUpdater menuMediaUpdater;
 =======
     private final ReportService reportService;
 >>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
+=======
+    private final MenuMessenger menuMessenger;
+    private final CallbackDispatcher callbackDispatcher;
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
 
     @Override
     public String getBotUsername() {
@@ -110,14 +142,20 @@ public class MickeyHandler extends TelegramLongPollingBot {
 
             if (message.hasText()) {
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
                 if (message.getChat() != null && message.getChat().isUserChat()) {
                     handlePrivateText(message);
                 } else {
                     handleGroupText(message);
                 }
+<<<<<<< HEAD
 =======
                 handleText(message);
 >>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
             }
         } catch (Exception e) {
             log.error("обробка оновлення успішно провалилась", e);
@@ -125,6 +163,9 @@ public class MickeyHandler extends TelegramLongPollingBot {
     }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
     @Override
     public void onUpdatesReceived(List<Update> updates) {
         for (Update update : updates) {
@@ -206,6 +247,7 @@ public class MickeyHandler extends TelegramLongPollingBot {
         if (from == null) {
             return;
         }
+<<<<<<< HEAD
 =======
     private void handleNewMembers(Message message) {
         Long chatId = message.getChatId();
@@ -253,6 +295,8 @@ public class MickeyHandler extends TelegramLongPollingBot {
         String text = message.getText().trim();
         User from = message.getFrom();
 >>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
         chatMemberService.touch(from);
 
         if (text.startsWith("/")) {
@@ -261,6 +305,9 @@ public class MickeyHandler extends TelegramLongPollingBot {
             String args = tokens.length > 1 ? tokens[1] : "";
             boolean isDev = botProperties.getDevIds() != null && botProperties.getDevIds().contains(from.getId());
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
             boolean isChatAdmin = isDev || permissionService.isUserChatAdmin(this, chatId, from.getId());
             commandManager.process(command, this, message, args, isChatAdmin, isDev);
             return;
@@ -279,42 +326,9 @@ public class MickeyHandler extends TelegramLongPollingBot {
         User user = callbackQuery.getFrom();
         MaybeInaccessibleMessage originalMessage = callbackQuery.getMessage();
 
-        if (originalMessage instanceof Message msg) {
-            if (msg.getChat() != null && !msg.getChat().isUserChat()) {
-                Message replyTo = msg.getReplyToMessage();
-                Long menuAuthorId = null;
-                if (replyTo != null && replyTo.getFrom() != null) {
-                    menuAuthorId = replyTo.getFrom().getId();
-                } else if (msg.getForwardFrom() != null) {
-                    menuAuthorId = msg.getForwardFrom().getId();
-                }
-
-                if (menuAuthorId != null) {
-                    boolean isDev = botProperties.getDevIds() != null && botProperties.getDevIds().contains(user.getId());
-                    if (!menuAuthorId.equals(user.getId()) && !isDev) {
-                        try {
-                            AnswerCallbackQuery answer = new AnswerCallbackQuery();
-                            answer.setCallbackQueryId(callbackQuery.getId());
-                            answer.setText("Цією кнопкою може користуватися лише той, хто викликав меню!");
-                            answer.setShowAlert(true);
-                            execute(answer);
-                        } catch (TelegramApiException ignored) {
-                        }
-                        return;
-                    }
-                }
-            }
-        }
-
-        try {
-            AnswerCallbackQuery answer = new AnswerCallbackQuery();
-            answer.setCallbackQueryId(callbackQuery.getId());
-            execute(answer);
-        } catch (TelegramApiException ignored) {
-        }
-
         String data = callbackQuery.getData();
         if (data != null && data.startsWith("R:")) {
+            answerCallback(callbackQuery.getId(), null);
             reportCommandService.handleCallback(this, callbackQuery, data);
             return;
         }
@@ -323,20 +337,24 @@ public class MickeyHandler extends TelegramLongPollingBot {
                 || data.startsWith("logs_confirm:")
                 || data.startsWith("logs_filter:")
                 || data.startsWith("logs_page:"))) {
+            answerCallback(callbackQuery.getId(), null);
             logsCallbackService.handleCallback(this, callbackQuery, data);
             return;
         }
 
         if (data != null && data.equals("welcome:member_number")) {
+            answerCallback(callbackQuery.getId(), null);
             return;
         }
 
-        if (originalMessage == null) {
+        if (originalMessage == null || data == null) {
+            answerCallback(callbackQuery.getId(), null);
             return;
         }
 
         Long chatId = originalMessage.getChatId();
         Integer messageId = originalMessage.getMessageId();
+<<<<<<< HEAD
 =======
             commandManager.process(command, this, message, args, isDev);
             return;
@@ -446,27 +464,63 @@ public class MickeyHandler extends TelegramLongPollingBot {
                 keyboard = null;
             }
             default -> text = TextHelper.MENU_TITLE;
+=======
+
+        MenuSection section = resolveSection(data, chatId, user);
+        if (section == null) {
+            answerCallback(callbackQuery.getId(), null);
+            return;
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
         }
 
-        try {
-            EditMessageText edit = new EditMessageText();
-            edit.setChatId(chatId);
-            edit.setMessageId(messageId);
-            edit.setText(text);
-            edit.setParseMode("HTML");
-            if (keyboard != null) {
-                edit.setReplyMarkup(keyboard);
-            }
-            execute(edit);
+        // Інлайн-клавіатура спільна для всього чату, тому чуже меню не перемальовуємо:
+        // тому, хто натиснув, відкриваємо власну копію розділу. Так кілька учасників
+        // можуть одночасно ходити по меню незалежно один від одного.
+        if (menuMessenger.isOwnedByOther(chatId, messageId, user.getId())) {
+            answerCallback(callbackQuery.getId(), "Відкрив це меню особисто для тебе 👇");
+            menuMessenger.sendMenu(this, chatId, user.getId(), section.text(), section.keyboard());
+            return;
+        }
 
+        answerCallback(callbackQuery.getId(), null);
+        menuMessenger.updateMenu(this, originalMessage, chatId, messageId, user.getId(),
+                section.text(), section.keyboard());
+    }
+
+    private MenuSection resolveSection(String data, Long chatId, User user) {
+        boolean developer = botProperties.getDevIds() != null && botProperties.getDevIds().contains(user.getId());
+        boolean chatAdmin = developer || permissionService.isUserChatAdmin(this, chatId, user.getId());
+        Optional<CallbackView> moduleView = callbackDispatcher.dispatch(
+                new CallbackContext(data, chatId, user.getId(), developer, chatAdmin));
+        if (moduleView.isPresent()) {
+            CallbackView view = moduleView.get();
+            return new MenuSection(view.text(),
+                    view.keyboard() != null ? view.keyboard() : keyboardHelper.backToMenu());
+        }
+
+        return switch (data) {
+            case "menu:main" -> new MenuSection(TextHelper.MENU_TITLE, keyboardHelper.mainMenu());
+            case "menu:faq" -> new MenuSection(TextHelper.FAQ_MENU_HINT, keyboardHelper.faqMenu());
+            case "menu:help" -> new MenuSection(TextHelper.HELP_TEXT, keyboardHelper.backToMenu());
+            case "faq:dorms" -> new MenuSection(TextHelper.FAQ_DORMS, keyboardHelper.backToFaq());
+            case "faq:admission" -> new MenuSection(TextHelper.FAQ_ADMISSION, keyboardHelper.backToFaq());
+            default -> null;
+        };
+    }
+
+    private void answerCallback(String callbackQueryId, String toast) {
+        try {
             AnswerCallbackQuery answer = new AnswerCallbackQuery();
-            answer.setCallbackQueryId(callbackQuery.getId());
+            answer.setCallbackQueryId(callbackQueryId);
+            if (toast != null) {
+                answer.setText(toast);
+            }
             execute(answer);
-        } catch (TelegramApiException e) {
-            log.error("колбек викаблучується", e);
+        } catch (TelegramApiException ignored) {
         }
     }
 
+<<<<<<< HEAD
     private boolean isTargetGroup(Long chatId) {
         String target = botProperties.getTargetGroupUsername();
         if (target == null || target.isBlank()) {
@@ -496,5 +550,8 @@ public class MickeyHandler extends TelegramLongPollingBot {
             log.error("меседж хес нот бін сент", e);
 >>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
         }
+=======
+    private record MenuSection(String text, InlineKeyboardMarkup keyboard) {
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
     }
 }

@@ -21,9 +21,13 @@ public class UserCommandService {
     private final PollService pollService;
     private final BroadcastService broadcastService;
 <<<<<<< HEAD
+<<<<<<< HEAD
     private final ActivityAuditService activityAuditService;
 =======
 >>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
+=======
+    private final ActivityAuditService activityAuditService;
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
 
     private static final DateTimeFormatter INPUT_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
@@ -31,10 +35,14 @@ public class UserCommandService {
         String[] split = argsText.split("\\?", 2);
         if (split.length < 2) {
 <<<<<<< HEAD
+<<<<<<< HEAD
             reply(bot, message, "⚠️ Формат: /poll Питання? Варіант 1;Варіант 2;...");
 =======
             reply(bot, message, "⚠️ Формат: /poll Питання? Варіант1;Варіант2;...");
 >>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
+=======
+            reply(bot, message, "⚠️ Формат: /poll Питання? Варіант 1;Варіант 2;...");
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
             return;
         }
         String question = split[0].trim();
@@ -51,10 +59,15 @@ public class UserCommandService {
         boolean created = pollService.createPoll(bot, message.getChatId(), question, options);
         if (created) {
 <<<<<<< HEAD
+<<<<<<< HEAD
             activityAuditService.logActivity(message.getChatId(), message.getFrom().getId(), message.getFrom().getUserName(),
                     "MODERATION", "POLL_CREATED", "Питання: " + question);
 =======
 >>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
+=======
+            activityAuditService.logActivity(message.getChatId(), message.getFrom().getId(), message.getFrom().getUserName(),
+                    "MODERATION", "POLL_CREATED", "Питання: " + question);
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
             reply(bot, message, TextHelper.POLL_CREATED);
         } else {
             reply(bot, message, "❌ Не вдалося створити опитування.");
@@ -72,10 +85,15 @@ public class UserCommandService {
             String text = parts[2];
             broadcastService.schedule(message.getChatId(), text, sendAt);
 <<<<<<< HEAD
+<<<<<<< HEAD
             activityAuditService.logActivity(message.getChatId(), message.getFrom().getId(), message.getFrom().getUserName(),
                     "MODERATION", "BROADCAST_SCHEDULED", "Час: " + sendAt.format(INPUT_FORMAT) + " | Текст: " + truncate(text, 200));
 =======
 >>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
+=======
+            activityAuditService.logActivity(message.getChatId(), message.getFrom().getId(), message.getFrom().getUserName(),
+                    "MODERATION", "BROADCAST_SCHEDULED", "Час: " + sendAt.format(INPUT_FORMAT) + " | Текст: " + truncate(text, 200));
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
             reply(bot, message, String.format(TextHelper.BROADCAST_SCHEDULED, sendAt.format(INPUT_FORMAT)));
         } catch (DateTimeParseException e) {
             reply(bot, message, "⚠️ Неправильний формат дати. " + TextHelper.BROADCAST_HELP);
@@ -93,6 +111,9 @@ public class UserCommandService {
         }
     }
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
 
     private String truncate(String text, int maxLength) {
         if (text == null) {
@@ -101,6 +122,9 @@ public class UserCommandService {
         String singleLine = text.replaceAll("\\s+", " ").trim();
         return singleLine.length() > maxLength ? singleLine.substring(0, maxLength) + "…" : singleLine;
     }
+<<<<<<< HEAD
 =======
 >>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
 }

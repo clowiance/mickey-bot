@@ -1,6 +1,9 @@
 package dev.clowiance.mickey.helper;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -75,6 +78,7 @@ public class ContentHelper {
                 continue;
             }
             if (normalized.contains(cleanWord) || compact.contains(cleanWord.replaceAll("\\s+", ""))) {
+<<<<<<< HEAD
 =======
 import org.springframework.stereotype.Component;
 
@@ -112,6 +116,8 @@ public class ContentHelper {
         for (String word : PROFANITY_WORDS) {
             if (lower.contains(word)) {
 >>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
                 return true;
             }
         }
@@ -123,6 +129,9 @@ public class ContentHelper {
             return false;
         }
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
         String sanitized = sanitizeText(text);
         if (REPEATED_CHARS.matcher(sanitized).find()) {
             return true;
@@ -168,6 +177,7 @@ public class ContentHelper {
 
         return dehomoglyphed.replaceAll("[^a-zа-яєіїґ0-9 ]", " ");
     }
+<<<<<<< HEAD
 =======
         if (REPEATED_CHARS.matcher(text).find()) {
             return true;
@@ -183,4 +193,6 @@ public class ContentHelper {
         return false;
     }
 >>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
 }

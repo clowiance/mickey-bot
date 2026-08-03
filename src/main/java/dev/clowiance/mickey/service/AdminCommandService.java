@@ -3,22 +3,31 @@ package dev.clowiance.mickey.service;
 import dev.clowiance.mickey.entity.ChatMember;
 import dev.clowiance.mickey.entity.PunishmentLog;
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
 import dev.clowiance.mickey.entity.WarnEntity;
 import dev.clowiance.mickey.helper.TargetHelper;
 import dev.clowiance.mickey.helper.TextHelper;
 import dev.clowiance.mickey.helper.TimeHelper;
+<<<<<<< HEAD
 =======
 import dev.clowiance.mickey.helper.TextHelper;
 >>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 import org.telegram.telegrambots.meta.api.objects.User;
 >>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.time.LocalDateTime;
@@ -33,19 +42,28 @@ public class AdminCommandService {
     private final ModerationService moderationService;
     private final PunishmentService punishmentService;
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
     private final WarnService warnService;
     private final GuardService guardService;
     private final TargetHelper targetHelper;
     private final TimeHelper timeHelper;
     private final PermissionService permissionService;
     private final ActivityAuditService activityAuditService;
+<<<<<<< HEAD
 =======
 >>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
 
     public void handleWarn(TelegramLongPollingBot bot, Message message, String argsText) {
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
         TargetHelper.ResolvedTarget target = targetHelper.resolve(bot, message, argsText);
         if (!target.found()) {
             reply(bot, message, TextHelper.TARGET_NOT_FOUND);
@@ -146,6 +164,7 @@ public class AdminCommandService {
                     targetWarn.getId(), target.mention(), adminMention, remainingWarns
             );
             reply(bot, message, details);
+<<<<<<< HEAD
 =======
         if (!requireReply(bot, message)) {
             return;
@@ -162,11 +181,16 @@ public class AdminCommandService {
             punishmentService.log(target.getId(), target.getUserName(), "AUTO_BAN", "3 попередження", message.getFrom().getId());
             reply(bot, message, String.format(TextHelper.AUTO_BAN_AFTER_WARNS, mention(target)));
 >>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
         }
     }
 
     public void handleMute(TelegramLongPollingBot bot, Message message, String argsText) {
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
         TargetHelper.ResolvedTarget target = targetHelper.resolve(bot, message, argsText);
         if (!target.found()) {
             reply(bot, message, TextHelper.TARGET_NOT_FOUND);
@@ -355,6 +379,7 @@ public class AdminCommandService {
             sb.append("\n");
         }
         if (member != null) {
+<<<<<<< HEAD
 =======
         if (!requireReply(bot, message)) {
             return;
@@ -424,6 +449,8 @@ public class AdminCommandService {
         if (member != null) {
             sb.append("⚠️ Попереджень: ").append(member.getWarnCount()).append("\n");
 >>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
             sb.append("🔇 Замучений: ").append(Boolean.TRUE.equals(member.getMuted()) ? "так" : "ні").append("\n");
             sb.append("⛔ Забанений: ").append(Boolean.TRUE.equals(member.getBanned()) ? "так" : "ні").append("\n");
             if (member.getJoinedAt() != null) {
@@ -443,6 +470,9 @@ public class AdminCommandService {
     }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
     public void handleAdminPanel(TelegramLongPollingBot bot, Message message) {
         Long chatId = message.getChatId();
         boolean botIsAdmin = permissionService.isBotAdmin(bot, chatId);
@@ -468,6 +498,7 @@ public class AdminCommandService {
             return "@" + user.getUserName();
         }
         return user.getFirstName() != null ? user.getFirstName() : String.valueOf(user.getId());
+<<<<<<< HEAD
 =======
     private boolean requireReply(TelegramLongPollingBot bot, Message message) {
         if (message.getReplyToMessage() == null) {
@@ -476,6 +507,8 @@ public class AdminCommandService {
         }
         return true;
 >>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
     }
 
     private void reply(TelegramLongPollingBot bot, Message message, String text) {
@@ -489,10 +522,13 @@ public class AdminCommandService {
         }
     }
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
     private String mention(User user) {
         return user.getUserName() != null ? "@" + user.getUserName() : user.getFirstName();
     }
 >>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
+=======
+>>>>>>> 2279071efff4b6931d1c5688c7106a6c800614a0
 }
