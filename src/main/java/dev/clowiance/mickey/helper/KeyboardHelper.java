@@ -4,7 +4,10 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
+<<<<<<< HEAD
 import java.util.ArrayList;
+=======
+>>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
 import java.util.List;
 
 @Component
@@ -18,10 +21,17 @@ public class KeyboardHelper {
         InlineKeyboardButton help = button("🤖 Команди", "menu:help");
 
         return InlineKeyboardMarkup.builder()
+<<<<<<< HEAD
                 .keyboardRow(List.of(help))
                 .keyboardRow(List.of(specialties, prices))
                 .keyboardRow(List.of(dorms))
                 .keyboardRow(List.of(faq))
+=======
+                .keyboardRow(List.of(faq))
+                .keyboardRow(List.of(specialties, prices))
+                .keyboardRow(List.of(dorms))
+                .keyboardRow(List.of(help))
+>>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
                 .build();
     }
 
@@ -41,6 +51,7 @@ public class KeyboardHelper {
 
     public InlineKeyboardMarkup backToMenu() {
         return InlineKeyboardMarkup.builder()
+<<<<<<< HEAD
                 .keyboardRow(List.of(button("⬅️ Назад", "menu:main")))
                 .build();
     }
@@ -80,6 +91,34 @@ public class KeyboardHelper {
                 .keyboardRow(List.of(
                         button("❌ Закрити аудит", "logs_close")
                 ))
+=======
+                .keyboardRow(List.of(button("⬅️ Назад до меню", "menu:main")))
+                .build();
+    }
+
+    public InlineKeyboardMarkup devPanel() {
+        InlineKeyboardButton reports = button("📋 Всі репорти", "dev:reports");
+        InlineKeyboardButton chats = button("💬 Чати", "dev:chats");
+        InlineKeyboardButton stats = button("📊 Статистика", "dev:stats");
+        InlineKeyboardButton back = button("⬅️ Назад", "menu:main");
+
+        return InlineKeyboardMarkup.builder()
+                .keyboardRow(List.of(reports, chats))
+                .keyboardRow(List.of(stats))
+                .keyboardRow(List.of(back))
+                .build();
+    }
+
+    public InlineKeyboardMarkup adminPanel() {
+        InlineKeyboardButton reports = button("📋 Репорти чату", "admin:reports");
+        InlineKeyboardButton stats = button("📊 Статистика чату", "admin:stats");
+        InlineKeyboardButton back = button("⬅️ Назад", "menu:main");
+
+        return InlineKeyboardMarkup.builder()
+                .keyboardRow(List.of(reports))
+                .keyboardRow(List.of(stats))
+                .keyboardRow(List.of(back))
+>>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
                 .build();
     }
 

@@ -21,7 +21,11 @@ public class PermissionScheduler {
     private final PermissionService permissionService;
     private final MickeyHandler bot;
 
+<<<<<<< HEAD
     @Scheduled(fixedDelay = 60000)
+=======
+    @Scheduled(fixedDelay = 300000)
+>>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
     public void checkChats() {
         List<ChatInfo> chats = permissionService.findAllChats();
         for (ChatInfo chat : chats) {

@@ -4,17 +4,26 @@ import dev.clowiance.mickey.command.ICommand;
 import dev.clowiance.mickey.helper.KeyboardHelper;
 import dev.clowiance.mickey.helper.TextHelper;
 import lombok.RequiredArgsConstructor;
+<<<<<<< HEAD
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
+=======
+import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+>>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+<<<<<<< HEAD
 import java.io.InputStream;
 
+=======
+>>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
 @Component
 @RequiredArgsConstructor
 public class MenuCommand implements ICommand {
@@ -32,6 +41,7 @@ public class MenuCommand implements ICommand {
     }
 
     @Override
+<<<<<<< HEAD
     public boolean isInfoCommand() {
         return true;
     }
@@ -64,6 +74,23 @@ public class MenuCommand implements ICommand {
                 }
             }
         } catch (TelegramApiException | java.io.IOException ignored) {
+=======
+    public void execute(TelegramLongPollingBot bot, Message message, String args) {
+        send(bot, message.getChatId(), TextHelper.MENU_TITLE, keyboardHelper.mainMenu());
+    }
+
+    private void send(TelegramLongPollingBot bot, Long chatId, String text, InlineKeyboardMarkup keyboard) {
+        try {
+            SendMessage sendMessage = new SendMessage();
+            sendMessage.setChatId(chatId);
+            sendMessage.setParseMode("HTML");
+            sendMessage.setText(text);
+            if (keyboard != null) {
+                sendMessage.setReplyMarkup(keyboard);
+            }
+            bot.execute(sendMessage);
+        } catch (TelegramApiException ignored) {
+>>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
         }
     }
 }

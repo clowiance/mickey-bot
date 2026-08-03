@@ -1,5 +1,6 @@
 package dev.clowiance.mickey.helper;
 
+<<<<<<< HEAD
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -74,6 +75,43 @@ public class ContentHelper {
                 continue;
             }
             if (normalized.contains(cleanWord) || compact.contains(cleanWord.replaceAll("\\s+", ""))) {
+=======
+import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.regex.Pattern;
+
+@Component
+public class ContentHelper {
+
+    private static final Pattern URL_PATTERN = Pattern.compile(
+            "(https?://\\S+)|(www\\.\\S+)|(t\\.me/\\S+)|(\\S+\\.(com|net|org|ua|ru|io|xyz|click|top|shop)\\b\\S*)",
+            Pattern.CASE_INSENSITIVE);
+
+    private static final List<String> PROFANITY_WORDS = List.of(
+            "бляд", "хуй", "хуе", "пизд", "єбан", "ебан", "сука", "мудак",
+            "гандон", "залуп", "піздец", "довбойоб", "уйоб", "хуйн"
+    );
+
+    private static final Pattern REPEATED_CHARS = Pattern.compile("(.)\\1{6,}");
+    private static final Pattern EMOJI_SPAM = Pattern.compile(
+            "([\\x{1F300}-\\x{1FAFF}\\x{2600}-\\x{27BF}]){8,}");
+
+    public boolean containsLink(String text) {
+        if (text == null) {
+            return false;
+        }
+        return URL_PATTERN.matcher(text).find();
+    }
+
+    public boolean containsProfanity(String text) {
+        if (text == null) {
+            return false;
+        }
+        String lower = text.toLowerCase().replaceAll("[^а-щьюяіїєa-z0-9 ]", "");
+        for (String word : PROFANITY_WORDS) {
+            if (lower.contains(word)) {
+>>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
                 return true;
             }
         }
@@ -84,6 +122,7 @@ public class ContentHelper {
         if (text == null || text.isBlank()) {
             return false;
         }
+<<<<<<< HEAD
         String sanitized = sanitizeText(text);
         if (REPEATED_CHARS.matcher(sanitized).find()) {
             return true;
@@ -129,4 +168,19 @@ public class ContentHelper {
 
         return dehomoglyphed.replaceAll("[^a-zа-яєіїґ0-9 ]", " ");
     }
+=======
+        if (REPEATED_CHARS.matcher(text).find()) {
+            return true;
+        }
+        if (EMOJI_SPAM.matcher(text).find()) {
+            return true;
+        }
+        long upperCount = text.chars().filter(Character::isUpperCase).count();
+        long letterCount = text.chars().filter(Character::isLetter).count();
+        if (letterCount > 15 && upperCount > letterCount * 0.8) {
+            return true;
+        }
+        return false;
+    }
+>>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
 }

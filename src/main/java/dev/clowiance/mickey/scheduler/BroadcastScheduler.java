@@ -24,7 +24,11 @@ public class BroadcastScheduler {
             try {
                 SendMessage message = new SendMessage();
                 message.setChatId(broadcast.getChatId());
+<<<<<<< HEAD
                 message.setText("📢 <b>Новини</b>\n\n" + broadcast.getText());
+=======
+                message.setText("📢 <b>Новини приймальної комісії</b>\n\n" + broadcast.getText());
+>>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
                 message.setParseMode("HTML");
                 bot.execute(message);
                 broadcastService.markSent(broadcast);

@@ -35,15 +35,20 @@ public class ChatMemberService {
     }
 
     public int addWarn(Long userId) {
+<<<<<<< HEAD
         ChatMember member = repository.findById(userId).orElseGet(() -> {
             ChatMember created = ChatMember.builder().userId(userId).joinedAt(LocalDateTime.now()).build();
             return repository.save(created);
         });
+=======
+        ChatMember member = repository.findById(userId).orElseThrow();
+>>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
         member.setWarnCount(member.getWarnCount() + 1);
         repository.save(member);
         return member.getWarnCount();
     }
 
+<<<<<<< HEAD
     public int removeWarn(Long userId) {
         ChatMember member = repository.findById(userId).orElse(null);
         if (member == null) {
@@ -55,6 +60,8 @@ public class ChatMemberService {
         return newCount;
     }
 
+=======
+>>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
     public void resetWarns(Long userId) {
         repository.findById(userId).ifPresent(member -> {
             member.setWarnCount(0);
@@ -63,6 +70,7 @@ public class ChatMemberService {
     }
 
     public void setMuted(Long userId, boolean muted, LocalDateTime until) {
+<<<<<<< HEAD
         repository.findById(userId).ifPresentOrElse(member -> {
             member.setMuted(muted);
             member.setMutedUntil(until);
@@ -75,10 +83,17 @@ public class ChatMemberService {
                     .joinedAt(LocalDateTime.now())
                     .build();
             repository.save(member);
+=======
+        repository.findById(userId).ifPresent(member -> {
+            member.setMuted(muted);
+            member.setMutedUntil(until);
+            repository.save(member);
+>>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
         });
     }
 
     public void setBanned(Long userId, boolean banned) {
+<<<<<<< HEAD
         repository.findById(userId).ifPresentOrElse(member -> {
             member.setBanned(banned);
             repository.save(member);
@@ -89,12 +104,18 @@ public class ChatMemberService {
                     .joinedAt(LocalDateTime.now())
                     .build();
             repository.save(member);
+=======
+        repository.findById(userId).ifPresent(member -> {
+            member.setBanned(banned);
+            repository.save(member);
+>>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
         });
     }
 
     public ChatMember findById(Long userId) {
         return repository.findById(userId).orElse(null);
     }
+<<<<<<< HEAD
 
     public ChatMember findByUsername(String username) {
         if (username == null || username.isBlank()) {
@@ -111,4 +132,6 @@ public class ChatMemberService {
     public long countTotalMembers() {
         return repository.count();
     }
+=======
+>>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
 }

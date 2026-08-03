@@ -1,19 +1,28 @@
 package dev.clowiance.mickey.service;
 
 import dev.clowiance.mickey.entity.ChatInfo;
+<<<<<<< HEAD
 import dev.clowiance.mickey.helper.TextHelper;
+=======
+>>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
 import dev.clowiance.mickey.repository.ChatInfoRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.GetChatMember;
+<<<<<<< HEAD
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+=======
+>>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
 import org.telegram.telegrambots.meta.api.objects.chatmember.ChatMemberAdministrator;
 import org.telegram.telegrambots.meta.api.objects.chatmember.ChatMemberOwner;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+<<<<<<< HEAD
 import java.lang.reflect.Method;
+=======
+>>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -29,6 +38,7 @@ public class PermissionService {
         this.botUserId = botUserId;
     }
 
+<<<<<<< HEAD
     public boolean validateBotPermissions(TelegramLongPollingBot bot, Long chatId) {
         if (botUserId == null) {
             try {
@@ -37,12 +47,18 @@ public class PermissionService {
             } catch (TelegramApiException e) {
                 return false;
             }
+=======
+    public boolean isBotAdmin(TelegramLongPollingBot bot, Long chatId) {
+        if (botUserId == null) {
+            return false;
+>>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
         }
         try {
             GetChatMember gcm = new GetChatMember();
             gcm.setChatId(chatId);
             gcm.setUserId(botUserId);
             var member = bot.execute(gcm);
+<<<<<<< HEAD
             boolean hasRights = false;
             if (member instanceof ChatMemberOwner) {
                 hasRights = true;
@@ -61,10 +77,15 @@ public class PermissionService {
                 sendAdminRequiredNotice(bot, chatId);
                 updateWarningTime(chatId);
             }
+=======
+            return member instanceof ChatMemberAdministrator || member instanceof ChatMemberOwner;
+        } catch (TelegramApiException e) {
+>>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
             return false;
         }
     }
 
+<<<<<<< HEAD
     public boolean isBotAdmin(TelegramLongPollingBot bot, Long chatId) {
         return validateBotPermissions(bot, chatId);
     }
@@ -73,17 +94,25 @@ public class PermissionService {
         if (userId == null) {
             return false;
         }
+=======
+    public boolean isChatAdmin(TelegramLongPollingBot bot, Long chatId, Long userId) {
+>>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
         try {
             GetChatMember gcm = new GetChatMember();
             gcm.setChatId(chatId);
             gcm.setUserId(userId);
             var member = bot.execute(gcm);
+<<<<<<< HEAD
             return member instanceof ChatMemberOwner || member instanceof ChatMemberAdministrator;
+=======
+            return member instanceof ChatMemberAdministrator || member instanceof ChatMemberOwner;
+>>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
         } catch (TelegramApiException e) {
             return false;
         }
     }
 
+<<<<<<< HEAD
     private static final List<String> REQUIRED_RIGHTS = List.of(
             "getCanDeleteMessages",
             "getCanRestrictMembers",
@@ -117,6 +146,8 @@ public class PermissionService {
         return true;
     }
 
+=======
+>>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
     public void ensureChatRecorded(Long chatId) {
         if (!chatInfoRepository.existsById(chatId)) {
             ChatInfo info = ChatInfo.builder()
@@ -128,12 +159,31 @@ public class PermissionService {
         }
     }
 
+<<<<<<< HEAD
+=======
+    public ChatInfo getChatInfo(Long chatId) {
+        return chatInfoRepository.findById(chatId).orElse(null);
+    }
+
+    public void recordBotJoin(Long chatId, int date) {
+        ChatInfo info = chatInfoRepository.findById(chatId).orElseGet(() ->
+                ChatInfo.builder().chatId(chatId).build());
+        info.setBotJoinedAt((long) date);
+        info.setAdminOk(true);
+        chatInfoRepository.save(info);
+    }
+
+>>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
     public boolean shouldWarn(Long chatId) {
         ChatInfo info = chatInfoRepository.findById(chatId).orElse(null);
         if (info == null) {
             return true;
         }
+<<<<<<< HEAD
         return info.getLastWarningAt() == null || info.getLastWarningAt().isBefore(LocalDateTime.now().minusMinutes(5));
+=======
+        return info.getLastWarningAt() == null || info.getLastWarningAt().isBefore(LocalDateTime.now().minusMinutes(10));
+>>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
     }
 
     public void updateWarningTime(Long chatId) {
@@ -154,6 +204,7 @@ public class PermissionService {
         return chatInfoRepository.findAll();
     }
 
+<<<<<<< HEAD
     private void sendAdminRequiredNotice(TelegramLongPollingBot bot, Long chatId) {
         try {
             SendMessage sendMessage = new SendMessage();
@@ -163,5 +214,20 @@ public class PermissionService {
             bot.execute(sendMessage);
         } catch (TelegramApiException ignored) {
         }
+=======
+    public String formatChatsList() {
+        List<ChatInfo> chats = findAllChats();
+        if (chats.isEmpty()) {
+            return "💬 Немає записаних чатів.";
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("💬 <b>Список чатів</b>\n\n");
+        for (ChatInfo chat : chats) {
+            sb.append("• ").append(chat.getChatId())
+                    .append(" | Адмін: ").append(Boolean.TRUE.equals(chat.getAdminOk()) ? "✅" : "❌")
+                    .append("\n");
+        }
+        return sb.toString();
+>>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
     }
 }

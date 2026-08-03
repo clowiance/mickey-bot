@@ -2,15 +2,23 @@ package dev.clowiance.mickey.service;
 
 import dev.clowiance.mickey.entity.ChatMember;
 import dev.clowiance.mickey.entity.PunishmentLog;
+<<<<<<< HEAD
 import dev.clowiance.mickey.entity.WarnEntity;
 import dev.clowiance.mickey.helper.TargetHelper;
 import dev.clowiance.mickey.helper.TextHelper;
 import dev.clowiance.mickey.helper.TimeHelper;
+=======
+import dev.clowiance.mickey.helper.TextHelper;
+>>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
+<<<<<<< HEAD
+=======
+import org.telegram.telegrambots.meta.api.objects.User;
+>>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.time.LocalDateTime;
@@ -24,16 +32,20 @@ public class AdminCommandService {
     private final ChatMemberService chatMemberService;
     private final ModerationService moderationService;
     private final PunishmentService punishmentService;
+<<<<<<< HEAD
     private final WarnService warnService;
     private final GuardService guardService;
     private final TargetHelper targetHelper;
     private final TimeHelper timeHelper;
     private final PermissionService permissionService;
     private final ActivityAuditService activityAuditService;
+=======
+>>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
 
     public void handleWarn(TelegramLongPollingBot bot, Message message, String argsText) {
+<<<<<<< HEAD
         TargetHelper.ResolvedTarget target = targetHelper.resolve(bot, message, argsText);
         if (!target.found()) {
             reply(bot, message, TextHelper.TARGET_NOT_FOUND);
@@ -134,10 +146,27 @@ public class AdminCommandService {
                     targetWarn.getId(), target.mention(), adminMention, remainingWarns
             );
             reply(bot, message, details);
+=======
+        if (!requireReply(bot, message)) {
+            return;
+        }
+        User target = message.getReplyToMessage().getFrom();
+        String reason = argsText.isBlank() ? "не вказано" : argsText;
+        int warns = chatMemberService.addWarn(target.getId());
+        punishmentService.log(target.getId(), target.getUserName(), "WARN", reason, message.getFrom().getId());
+        reply(bot, message, String.format(TextHelper.WARN_MESSAGE, mention(target), warns, reason));
+
+        if (warns >= 3) {
+            moderationService.banUser(bot, message.getChatId(), target.getId());
+            chatMemberService.setBanned(target.getId(), true);
+            punishmentService.log(target.getId(), target.getUserName(), "AUTO_BAN", "3 попередження", message.getFrom().getId());
+            reply(bot, message, String.format(TextHelper.AUTO_BAN_AFTER_WARNS, mention(target)));
+>>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
         }
     }
 
     public void handleMute(TelegramLongPollingBot bot, Message message, String argsText) {
+<<<<<<< HEAD
         TargetHelper.ResolvedTarget target = targetHelper.resolve(bot, message, argsText);
         if (!target.found()) {
             reply(bot, message, TextHelper.TARGET_NOT_FOUND);
@@ -326,6 +355,75 @@ public class AdminCommandService {
             sb.append("\n");
         }
         if (member != null) {
+=======
+        if (!requireReply(bot, message)) {
+            return;
+        }
+        User target = message.getReplyToMessage().getFrom();
+        String[] parts = argsText.trim().split("\s+", 2);
+        int minutes = 60;
+        String reason = "не вказано";
+        if (parts.length > 0 && !parts[0].isBlank()) {
+            try {
+                minutes = Integer.parseInt(parts[0]);
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        if (parts.length > 1) {
+            reason = parts[1];
+        }
+        moderationService.muteUser(bot, message.getChatId(), target.getId(), minutes);
+        chatMemberService.setMuted(target.getId(), true, LocalDateTime.now().plusMinutes(minutes));
+        punishmentService.log(target.getId(), target.getUserName(), "MUTE", reason, message.getFrom().getId());
+        reply(bot, message, String.format(TextHelper.MUTE_MESSAGE, mention(target), minutes, reason));
+    }
+
+    public void handleUnmute(TelegramLongPollingBot bot, Message message) {
+        if (!requireReply(bot, message)) {
+            return;
+        }
+        User target = message.getReplyToMessage().getFrom();
+        moderationService.unmuteUser(bot, message.getChatId(), target.getId());
+        chatMemberService.setMuted(target.getId(), false, null);
+        reply(bot, message, "🔊 " + mention(target) + " знову може писати в чат!");
+    }
+
+    public void handleBan(TelegramLongPollingBot bot, Message message, String argsText) {
+        if (!requireReply(bot, message)) {
+            return;
+        }
+        User target = message.getReplyToMessage().getFrom();
+        String reason = argsText.isBlank() ? "не вказано" : argsText;
+        moderationService.banUser(bot, message.getChatId(), target.getId());
+        chatMemberService.setBanned(target.getId(), true);
+        punishmentService.log(target.getId(), target.getUserName(), "BAN", reason, message.getFrom().getId());
+        reply(bot, message, String.format(TextHelper.BAN_MESSAGE, mention(target), reason));
+    }
+
+    public void handleUnban(TelegramLongPollingBot bot, Message message, String argsText) {
+        try {
+            Long targetId = Long.parseLong(argsText.trim());
+            moderationService.unbanUser(bot, message.getChatId(), targetId);
+            chatMemberService.setBanned(targetId, false);
+            reply(bot, message, "✅ Користувача " + targetId + " розбанено!");
+        } catch (NumberFormatException e) {
+            reply(bot, message, "⚠️ Вкажи коректний ID користувача: /unban 123456789");
+        }
+    }
+
+    public void handleStats(TelegramLongPollingBot bot, Message message) {
+        if (!requireReply(bot, message)) {
+            return;
+        }
+        User target = message.getReplyToMessage().getFrom();
+        ChatMember member = chatMemberService.findById(target.getId());
+        List<PunishmentLog> history = punishmentService.history(target.getId());
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("📈 <b>Статистика користувача</b> ").append(mention(target)).append("\n\n");
+        if (member != null) {
+            sb.append("⚠️ Попереджень: ").append(member.getWarnCount()).append("\n");
+>>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
             sb.append("🔇 Замучений: ").append(Boolean.TRUE.equals(member.getMuted()) ? "так" : "ні").append("\n");
             sb.append("⛔ Забанений: ").append(Boolean.TRUE.equals(member.getBanned()) ? "так" : "ні").append("\n");
             if (member.getJoinedAt() != null) {
@@ -344,6 +442,7 @@ public class AdminCommandService {
         reply(bot, message, sb.toString());
     }
 
+<<<<<<< HEAD
     public void handleAdminPanel(TelegramLongPollingBot bot, Message message) {
         Long chatId = message.getChatId();
         boolean botIsAdmin = permissionService.isBotAdmin(bot, chatId);
@@ -369,6 +468,14 @@ public class AdminCommandService {
             return "@" + user.getUserName();
         }
         return user.getFirstName() != null ? user.getFirstName() : String.valueOf(user.getId());
+=======
+    private boolean requireReply(TelegramLongPollingBot bot, Message message) {
+        if (message.getReplyToMessage() == null) {
+            reply(bot, message, TextHelper.REPLY_NEEDED);
+            return false;
+        }
+        return true;
+>>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
     }
 
     private void reply(TelegramLongPollingBot bot, Message message, String text) {
@@ -381,4 +488,11 @@ public class AdminCommandService {
         } catch (TelegramApiException ignored) {
         }
     }
+<<<<<<< HEAD
+=======
+
+    private String mention(User user) {
+        return user.getUserName() != null ? "@" + user.getUserName() : user.getFirstName();
+    }
+>>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
 }

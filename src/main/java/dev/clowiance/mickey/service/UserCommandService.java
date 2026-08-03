@@ -20,14 +20,21 @@ public class UserCommandService {
 
     private final PollService pollService;
     private final BroadcastService broadcastService;
+<<<<<<< HEAD
     private final ActivityAuditService activityAuditService;
+=======
+>>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
 
     private static final DateTimeFormatter INPUT_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     public void handlePoll(TelegramLongPollingBot bot, Message message, String argsText) {
         String[] split = argsText.split("\\?", 2);
         if (split.length < 2) {
+<<<<<<< HEAD
             reply(bot, message, "⚠️ Формат: /poll Питання? Варіант 1;Варіант 2;...");
+=======
+            reply(bot, message, "⚠️ Формат: /poll Питання? Варіант1;Варіант2;...");
+>>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
             return;
         }
         String question = split[0].trim();
@@ -43,8 +50,11 @@ public class UserCommandService {
 
         boolean created = pollService.createPoll(bot, message.getChatId(), question, options);
         if (created) {
+<<<<<<< HEAD
             activityAuditService.logActivity(message.getChatId(), message.getFrom().getId(), message.getFrom().getUserName(),
                     "MODERATION", "POLL_CREATED", "Питання: " + question);
+=======
+>>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
             reply(bot, message, TextHelper.POLL_CREATED);
         } else {
             reply(bot, message, "❌ Не вдалося створити опитування.");
@@ -61,8 +71,11 @@ public class UserCommandService {
             LocalDateTime sendAt = LocalDateTime.parse(parts[0] + " " + parts[1], INPUT_FORMAT);
             String text = parts[2];
             broadcastService.schedule(message.getChatId(), text, sendAt);
+<<<<<<< HEAD
             activityAuditService.logActivity(message.getChatId(), message.getFrom().getId(), message.getFrom().getUserName(),
                     "MODERATION", "BROADCAST_SCHEDULED", "Час: " + sendAt.format(INPUT_FORMAT) + " | Текст: " + truncate(text, 200));
+=======
+>>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
             reply(bot, message, String.format(TextHelper.BROADCAST_SCHEDULED, sendAt.format(INPUT_FORMAT)));
         } catch (DateTimeParseException e) {
             reply(bot, message, "⚠️ Неправильний формат дати. " + TextHelper.BROADCAST_HELP);
@@ -79,6 +92,7 @@ public class UserCommandService {
         } catch (TelegramApiException ignored) {
         }
     }
+<<<<<<< HEAD
 
     private String truncate(String text, int maxLength) {
         if (text == null) {
@@ -87,4 +101,6 @@ public class UserCommandService {
         String singleLine = text.replaceAll("\\s+", " ").trim();
         return singleLine.length() > maxLength ? singleLine.substring(0, maxLength) + "…" : singleLine;
     }
+=======
+>>>>>>> 26e0f7ae6c0171304cc5ebb93d0ea6d2410919c6
 }
