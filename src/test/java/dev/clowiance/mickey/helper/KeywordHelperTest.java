@@ -50,6 +50,22 @@ class KeywordHelperTest {
         assertThat(helper.findResponse(-200L, "яка ціна?")).isPresent();
     }
 
+    /**
+     * Про строки вступної кампанії бот більше не висловлюється: дати щороку змінюються,
+     * і мовчання безпечніше за застарілий дедлайн, надісланий абітурієнту.
+     */
+    @Test
+    void staysSilentAboutAdmissionCampaignDeadlines() {
+        assertThat(helper.findResponse(-100L, "які дедлайни цього року?")).isEmpty();
+        assertThat(helper.findResponse(-100L, "коли підписувати договір?")).isEmpty();
+    }
+
+    @Test
+    void explainsDifferenceBetweenDegrees() {
+        assertThat(helper.findResponse(-100L, "чим відрізняється бакалавр від магістра?"))
+                .contains(TextHelper.FAQ_DEGREES);
+    }
+
     @Test
     void ignoresTextWithoutKeywords() {
         assertThat(helper.findResponse(-100L, "всім привіт")).isEmpty();

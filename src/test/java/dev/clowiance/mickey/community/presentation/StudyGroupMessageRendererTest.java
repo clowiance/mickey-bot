@@ -2,6 +2,7 @@ package dev.clowiance.mickey.community.presentation;
 
 import dev.clowiance.mickey.community.bootstrap.UkdStudyGroupData;
 import dev.clowiance.mickey.community.domain.StudyGroup;
+import dev.clowiance.mickey.community.domain.StudyGroupCategory;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -20,14 +21,39 @@ class StudyGroupMessageRendererTest {
     });
 
     @Test
-    void showsOnlyUniversityGroups() {
-        String menu = renderer.renderAll();
+    void menuCountsEveryCategorySeparately() {
+        String menu = renderer.renderMenu();
 
-        assertThat(menu).contains("ЧАТИ ГРУП УНІВЕРСИТЕТУ")
-                .contains("8 груп")
-                .contains("Логістика")
-                .doesNotContain("УНІК")
-                .doesNotContain("коледж");
+        assertThat(menu).contains("ЧАТИ НАВЧАЛЬНИХ ГРУП")
+                .contains("Університет — 8")
+                .contains("Фаховий коледж — 11")
+                .contains("Обери, де ти навчаєшся");
+    }
+
+    @Test
+    void collegeViewShowsCollegeGroupsAndNotUniversityOnes() {
+        String college = renderer.renderCategory(StudyGroupCategory.COLLEGE);
+
+        assertThat(college).contains("ФАХОВИЙ КОЛЕДЖ")
+                .contains("Хореографія")
+                .contains("Юридичне діловодство та офісна справа")
+                .contains("Після 9 класу")
+                .doesNotContain("Логістика");
+    }
+
+    @Test
+    void universityViewShowsUniversityGroupsOnly() {
+        String university = renderer.renderCategory(StudyGroupCategory.UNIVERSITY);
+
+        assertThat(university).contains("Логістика")
+                .doesNotContain("Хореографія");
+    }
+
+    @Test
+    void countsGroupsPerCategory() {
+        assertThat(renderer.countOf(StudyGroupCategory.UNIVERSITY)).isEqualTo(8);
+        assertThat(renderer.countOf(StudyGroupCategory.COLLEGE)).isEqualTo(11);
+        assertThat(renderer.countOf(StudyGroupCategory.UNSPECIFIED)).isEqualTo(1);
     }
 
     @Test
@@ -43,6 +69,12 @@ class StudyGroupMessageRendererTest {
 
     @Test
     void keepsEveryViewWithinTelegramMessageLimit() {
+        assertThat(renderer.renderMenu().length()).isLessThanOrEqualTo(TELEGRAM_MESSAGE_LIMIT);
         assertThat(renderer.renderAll().length()).isLessThanOrEqualTo(TELEGRAM_MESSAGE_LIMIT);
+        for (StudyGroupCategory category : StudyGroupCategory.values()) {
+            assertThat(renderer.renderCategory(category).length())
+                    .as("розділ %s має вміщатися в одне повідомлення", category)
+                    .isLessThanOrEqualTo(TELEGRAM_MESSAGE_LIMIT);
+        }
     }
 }

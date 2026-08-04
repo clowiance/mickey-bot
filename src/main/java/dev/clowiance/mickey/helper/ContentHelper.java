@@ -23,9 +23,8 @@ public class ContentHelper {
             "[\\p{C}\\p{Cf}\\p{Zl}\\p{Zp}\\u200B-\\u200D\\uFEFF\\u00AD]"
     );
 
-    private static final Pattern HOMOGLYPH_NUMBERS = Pattern.compile(
-            "[0оОо0οΟоOоОｏ０]"
-    );
+    // Гомогліфи цифр і кирилиці розбирає deepNormalize() посимвольною заміною —
+    // окремий Pattern для них лишався невикористаним дублікатом тієї ж логіки.
 
     private Set<String> profanityWords = new HashSet<>();
 

@@ -11,13 +11,32 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class UkdStudyGroupDataTest {
 
+    /**
+     * Чати коледжу вже одного разу зникли зі списку разом із категорією {@code COLLEGE}
+     * — цей тест не дає їм зникнути вдруге.
+     */
     @Test
-    void keepsOnlyUniversityGroups() {
+    void keepsUniversityAndCollegeGroupsSeparately() {
         List<StudyGroup> entries = UkdStudyGroupData.entries();
 
-        assertThat(entries).hasSize(8);
+        assertThat(entries).hasSize(20);
         assertThat(countOf(StudyGroupCategory.UNIVERSITY)).isEqualTo(8);
-        assertThat(entries).allMatch(group -> group.category() == StudyGroupCategory.UNIVERSITY);
+        assertThat(countOf(StudyGroupCategory.COLLEGE)).isEqualTo(11);
+        assertThat(countOf(StudyGroupCategory.UNSPECIFIED)).isEqualTo(1);
+    }
+
+    @Test
+    void keepsCollegeInvitesProvidedByTheCurators() {
+        var links = UkdStudyGroupData.entries().stream()
+                .filter(group -> group.category() == StudyGroupCategory.COLLEGE)
+                .map(StudyGroup::inviteLink)
+                .toList();
+
+        assertThat(links).contains(
+                "https://t.me/+XYVIorkFAU05YzQy",
+                "https://t.me/+QQobfuw47Kw1Zjky",
+                "https://t.me/+AP2SgXSx-x83Mjcy",
+                "https://t.me/+AnMT_QFMFY4MjQy");
     }
 
     @Test
@@ -43,15 +62,19 @@ class UkdStudyGroupDataTest {
                 "https://t.me/+V0a4kWNnk-82MjAy");
     }
 
+    /**
+     * «Маркетинг» існує тричі: університет, 2 курс коледжу і набір після 9 класу.
+     * Злиття їх в один запис відправило б людей у чужий чат.
+     */
     @Test
-    void containsOneUniversityMarketingGroup() {
+    void keepsThreeDistinctMarketingGroups() {
         List<StudyGroup> marketing = UkdStudyGroupData.entries().stream()
                 .filter(group -> group.specialty().equals("Маркетинг"))
                 .toList();
 
-        assertThat(marketing).hasSize(1);
+        assertThat(marketing).hasSize(3);
         assertThat(marketing).extracting(StudyGroup::course)
-                .containsExactly("1 курс");
+                .containsExactlyInAnyOrder("1 курс", "2 курс", "Після 9 класу");
     }
 
     @Test

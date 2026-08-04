@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -19,17 +20,69 @@ public class StudyGroupMessageRenderer {
 
     private static final String DIVIDER = "━━━━━━━━━━━━━━━━━━";
 
+    /** Українська локаль: без неї «і» у верхньому регістрі перетворюється не на ту літеру. */
+    private static final Locale UA = Locale.forLanguageTag("uk-UA");
+
+    /**
+     * Стартовий екран: скільки груп у кожній категорії. Далі людина обирає свою —
+     * так університет і коледж не змішуються в одному списку.
+     */
+    public String renderMenu() {
+        StringBuilder text = new StringBuilder();
+        text.append("👥 <b>ЧАТИ НАВЧАЛЬНИХ ГРУП</b>\n")
+                .append("<i>").append(groupWord(all().size())).append("</i>\n")
+                .append(DIVIDER).append("\n");
+
+        for (StudyGroupCategory category : StudyGroupCategory.values()) {
+            long count = countOf(category);
+            if (count == 0) {
+                continue;
+            }
+            text.append(category.getEmoji()).append(" ").append(escape(category.getDisplayName()))
+                    .append(" — ").append(count).append("\n");
+        }
+
+        text.append("\nОбери, де ти навчаєшся 👇\n\n")
+                .append("<i>Це закриті чати одногрупників — посилання відкриває заявку на вступ у групу.</i>");
+        return text.toString();
+    }
+
+    public String renderCategory(StudyGroupCategory category) {
+        List<StudyGroup> groups = all().stream()
+                .filter(group -> group.category() == category)
+                .toList();
+
+        StringBuilder text = new StringBuilder();
+        text.append(category.getEmoji()).append(" <b>ЧАТИ ГРУП — ")
+                .append(escape(category.getDisplayName()).toUpperCase(UA))
+                .append("</b>\n")
+                .append("<i>").append(groupWord(groups.size())).append("</i>\n");
+
+        if (groups.isEmpty()) {
+            text.append("\nПоки що жодного чату в цій категорії.\n");
+        }
+        appendByCourse(text, groups);
+
+        text.append(DIVIDER).append("\n")
+                .append("ℹ️ Не знайшов свою групу — напиши кураторам або адміністрації чату.");
+        return text.toString();
+    }
+
     public String renderAll() {
         StringBuilder text = new StringBuilder();
-        text.append("🎓 <b>ЧАТИ ГРУП УНІВЕРСИТЕТУ</b>\n")
+        text.append("👥 <b>УСІ ЧАТИ НАВЧАЛЬНИХ ГРУП</b>\n")
                 .append("<i>").append(groupWord(all().size())).append("</i>\n");
 
-        for (Map.Entry<String, List<StudyGroup>> byCourse : groupByCourse(all()).entrySet()) {
-            text.append("\n<b>").append(escape(byCourse.getKey())).append("</b>\n");
-            for (StudyGroup group : byCourse.getValue()) {
-                text.append("   • <a href=\"").append(group.inviteLink()).append("\">")
-                        .append(escape(group.specialty())).append("</a>\n");
+        for (StudyGroupCategory category : StudyGroupCategory.values()) {
+            List<StudyGroup> groups = all().stream()
+                    .filter(group -> group.category() == category)
+                    .toList();
+            if (groups.isEmpty()) {
+                continue;
             }
+            text.append("\n").append(category.getEmoji()).append(" <b>")
+                    .append(escape(category.getDisplayName())).append("</b>\n");
+            appendByCourse(text, groups);
         }
 
         text.append(DIVIDER).append("\n")
@@ -37,10 +90,23 @@ public class StudyGroupMessageRenderer {
         return text.toString();
     }
 
+    private void appendByCourse(StringBuilder text, List<StudyGroup> groups) {
+        // «1 курс» і «Після 9 класу» — різні набори людей, тому курс лишається видимим.
+        for (Map.Entry<String, List<StudyGroup>> byCourse : groupByCourse(groups).entrySet()) {
+            text.append("\n<b>").append(escape(byCourse.getKey())).append("</b>\n");
+            for (StudyGroup group : byCourse.getValue()) {
+                text.append("   • <a href=\"").append(group.inviteLink()).append("\">")
+                        .append(escape(group.specialty())).append("</a>\n");
+            }
+        }
+    }
+
+    public long countOf(StudyGroupCategory category) {
+        return all().stream().filter(group -> group.category() == category).count();
+    }
+
     private List<StudyGroup> all() {
-        return directory.findActive().stream()
-                .filter(group -> group.category() == StudyGroupCategory.UNIVERSITY)
-                .toList();
+        return directory.findActive();
     }
 
     /**

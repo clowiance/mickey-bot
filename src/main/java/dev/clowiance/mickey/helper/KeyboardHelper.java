@@ -14,7 +14,6 @@ public class KeyboardHelper {
         InlineKeyboardButton faq = button("❓ FAQ", "menu:faq");
         InlineKeyboardButton specialties = button("🎯 Спеціальності", "faq:specialties");
         InlineKeyboardButton prices = button("💰 Ціни", "faq:prices");
-        InlineKeyboardButton admission = button("📝 Питання по вступу", "faq:admission");
         InlineKeyboardButton groups = button("👥 Чати груп", "groups:menu");
         InlineKeyboardButton dorms = button("🏠 Гуртожиток", "faq:dorms");
         InlineKeyboardButton help = button("🤖 Команди", "menu:help");
@@ -22,7 +21,6 @@ public class KeyboardHelper {
         return InlineKeyboardMarkup.builder()
                 .keyboardRow(List.of(help))
                 .keyboardRow(List.of(specialties, prices))
-                .keyboardRow(List.of(admission))
                 .keyboardRow(List.of(groups, dorms))
                 .keyboardRow(List.of(faq))
                 .build();
@@ -31,15 +29,14 @@ public class KeyboardHelper {
     public InlineKeyboardMarkup faqMenu() {
         InlineKeyboardButton specialties = button("🎯 Спеціальності", "faq:specialties");
         InlineKeyboardButton prices = button("💰 Ціни", "faq:prices");
-        InlineKeyboardButton admission = button("📝 Питання по вступу", "faq:admission");
+        InlineKeyboardButton degrees = button("🎓 Бакалавр, магістр, коледж", "faq:degrees");
         InlineKeyboardButton groups = button("👥 Чати навчальних груп", "groups:menu");
         InlineKeyboardButton dorms = button("🏠 Гуртожиток", "faq:dorms");
         InlineKeyboardButton back = button("⬅️ Назад", "menu:main");
 
         return InlineKeyboardMarkup.builder()
-                .keyboardRow(List.of(specialties))
-                .keyboardRow(List.of(prices))
-                .keyboardRow(List.of(admission))
+                .keyboardRow(List.of(degrees))
+                .keyboardRow(List.of(specialties, prices))
                 .keyboardRow(List.of(groups))
                 .keyboardRow(List.of(dorms))
                 .keyboardRow(List.of(back))
@@ -114,6 +111,7 @@ public class KeyboardHelper {
         InlineKeyboardButton stats = button("📊 Статистика", "dev:stats");
         InlineKeyboardButton globalChart = button("📈 Глобальна діаграма", "analytics:global");
         InlineKeyboardButton ratingChart = button("🏆 Рейтинг крон", "analytics:rating");
+        InlineKeyboardButton earnedChart = button("💸 Рейтинг заробітку", "analytics:earned");
         InlineKeyboardButton back = button("⬅️ Назад", "menu:main");
 
         return InlineKeyboardMarkup.builder()
@@ -121,6 +119,7 @@ public class KeyboardHelper {
                 .keyboardRow(List.of(groups, catalog))
                 .keyboardRow(List.of(stats))
                 .keyboardRow(List.of(globalChart, ratingChart))
+                .keyboardRow(List.of(earnedChart))
                 .keyboardRow(List.of(back))
                 .build();
     }

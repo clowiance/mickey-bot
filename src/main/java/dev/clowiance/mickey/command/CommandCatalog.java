@@ -71,7 +71,7 @@ public final class CommandCatalog {
         put("/chat", "/chat", "інформація та налаштування чату", Section.ADMIN);
         put("/logs", "/logs", "аудит подій та активності чату", Section.ADMIN);
         put("/reports", "/reports", "список поданих скарг", Section.ADMIN);
-        put("/charts", "/charts", "діаграми активності чату", Section.ADMIN);
+        put("/charts", "/charts [group|activity|rating|earned]", "діаграми активності та економіки чату", Section.ADMIN);
         put("/clear", "/clear [1-100]", "видалити останні N повідомлень", Section.ADMIN);
         put("/stats", "/stats [username або ID]", "статистика активності учасника", Section.ADMIN);
 

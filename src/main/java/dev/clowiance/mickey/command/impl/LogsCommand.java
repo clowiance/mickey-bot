@@ -1,7 +1,6 @@
 package dev.clowiance.mickey.command.impl;
 
 import dev.clowiance.mickey.command.ICommand;
-import dev.clowiance.mickey.helper.KeyboardHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -16,8 +15,6 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class LogsCommand implements ICommand {
-
-    private final KeyboardHelper keyboardHelper;
 
     @Override
     public String getCommand() {

@@ -14,6 +14,7 @@ import dev.clowiance.mickey.service.LogsCallbackService;
 import dev.clowiance.mickey.service.MessageService;
 import dev.clowiance.mickey.service.ReportCommandService;
 import dev.clowiance.mickey.helper.KeyboardHelper;
+import dev.clowiance.mickey.analytics.domain.ChartDashboard;
 import dev.clowiance.mickey.helper.KeywordHelper;
 import dev.clowiance.mickey.helper.TextHelper;
 import dev.clowiance.mickey.handler.helper.MenuImageSender;
@@ -242,9 +243,13 @@ public class MickeyHandler extends TelegramLongPollingBot {
         if (data.startsWith("analytics:")) {
             boolean developer = botProperties.getDevIds() != null && botProperties.getDevIds().contains(user.getId());
             boolean chatAdmin = developer || permissionService.isUserChatAdmin(this, chatId, user.getId());
-            String dashboard = data.substring("analytics:".length());
-            boolean allowed = "global".equals(dashboard) ? developer : chatAdmin;
-            if (!allowed) {
+            Optional<ChartDashboard> requested = ChartDashboard.fromSlug(data.substring("analytics:".length()));
+            if (requested.isEmpty()) {
+                answerCallback(callbackQuery.getId(), "Невідома діаграма");
+                return;
+            }
+            ChartDashboard dashboard = requested.get();
+            if (dashboard.developerOnly() ? !developer : !chatAdmin) {
                 answerCallback(callbackQuery.getId(), "Недостатньо прав для перегляду діаграми");
                 return;
             }
@@ -293,7 +298,7 @@ public class MickeyHandler extends TelegramLongPollingBot {
                     helpRenderer.render(chatAdmin, developer, chatId != null && chatId > 0),
                     keyboardHelper.backToMenu());
             case "faq:dorms" -> new MenuSection(TextHelper.FAQ_DORMS, keyboardHelper.backToFaq());
-            case "faq:admission" -> new MenuSection(TextHelper.FAQ_ADMISSION, keyboardHelper.backToFaq());
+            case "faq:degrees" -> new MenuSection(TextHelper.FAQ_DEGREES, keyboardHelper.backToFaq());
             default -> null;
         };
     }

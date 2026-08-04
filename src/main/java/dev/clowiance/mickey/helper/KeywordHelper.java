@@ -29,9 +29,11 @@ public class KeywordHelper {
     private record Topic(String id, List<String> keywords, String response) {
     }
 
+    // Теми перевіряються згори вниз, тому конкретніші йдуть перед загальними.
     private final List<Topic> topics = List.of(
+            new Topic("degrees", List.of("що таке бакалавр", "що таке магістр", "чим відрізня", "різниця між"),
+                    TextHelper.FAQ_DEGREES),
             new Topic("nmt", List.of("нмт", "мультипредметн"), TextHelper.KEYWORD_NMT),
-            new Topic("deadlines", List.of("дедлайн", "термін подач", "коли подавати"), TextHelper.KEYWORD_DEADLINES),
             new Topic("documents", List.of("документ", "які докум", "паспорт"), TextHelper.KEYWORD_DOCUMENTS),
             new Topic("dorms", List.of("гуртожит", "поселенн"), TextHelper.FAQ_DORMS),
             new Topic("prices", List.of("ціна", "вартість", "скільки коштує", "оплат"), TextHelper.FAQ_PRICES),

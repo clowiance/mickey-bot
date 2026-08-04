@@ -37,8 +37,23 @@ dependencies {
     testImplementation 'org.springframework.security:spring-security-test'
 }
 
+// Українські логи в консолі Windows інакше перетворюються на «╨Ь╨╡╨╜╤О»: JVM пише UTF-8,
+// а консоль читає їх у кодовій сторінці системи. Задаємо UTF-8 явно з обох боків.
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
 tasks.named('test') {
     useJUnitPlatform()
+    systemProperty 'file.encoding', 'UTF-8'
+}
+
+tasks.named('bootRun') {
+    jvmArgs = [
+            '-Dfile.encoding=UTF-8',
+            '-Dstdout.encoding=UTF-8',
+            '-Dstderr.encoding=UTF-8'
+    ]
 }
 
 tasks.named('bootJar') {

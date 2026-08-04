@@ -2,7 +2,6 @@ package dev.clowiance.mickey.command.impl;
 
 import dev.clowiance.mickey.command.ICommand;
 import dev.clowiance.mickey.helper.TextHelper;
-import dev.clowiance.mickey.service.PermissionService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Component;
@@ -17,12 +16,10 @@ import java.time.Instant;
 @Component
 public class ClearCommand implements ICommand {
 
-    private final PermissionService permissionService;
     private final TaskScheduler taskScheduler;
 
-    public ClearCommand(PermissionService permissionService,
-                        @Qualifier("botTaskScheduler") TaskScheduler taskScheduler) {
-        this.permissionService = permissionService;
+    // Права перевіряє CommandManager за isAdminOnly(), тому PermissionService тут не потрібен.
+    public ClearCommand(@Qualifier("botTaskScheduler") TaskScheduler taskScheduler) {
         this.taskScheduler = taskScheduler;
     }
 

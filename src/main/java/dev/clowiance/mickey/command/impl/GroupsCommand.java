@@ -41,6 +41,6 @@ public class GroupsCommand implements ICommand {
     public void execute(TelegramLongPollingBot bot, Message message, String args) {
         Long ownerId = message.getFrom() != null ? message.getFrom().getId() : null;
         menuMessenger.sendMenu(bot, message.getChatId(), ownerId,
-                renderer.renderAll(), callbackHandler.navigationMenu());
+                renderer.renderMenu(), callbackHandler.navigationMenu());
     }
 }

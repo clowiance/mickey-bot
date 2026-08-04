@@ -1,6 +1,7 @@
 package dev.clowiance.mickey.analytics.presentation;
 
 import dev.clowiance.mickey.analytics.application.AnalyticsDashboardService;
+import dev.clowiance.mickey.analytics.domain.ChartDashboard;
 import dev.clowiance.mickey.analytics.domain.RenderedChart;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -35,7 +36,7 @@ public class AnalyticsTelegramService {
         this.analyticsExecutor = analyticsExecutor;
     }
 
-    public void send(TelegramLongPollingBot bot, Long chatId, String dashboard) {
+    public void send(TelegramLongPollingBot bot, Long chatId, ChartDashboard dashboard) {
         try {
             analyticsExecutor.execute(() -> renderAndSend(bot, chatId, dashboard));
         } catch (RejectedExecutionException exception) {
@@ -44,19 +45,18 @@ public class AnalyticsTelegramService {
         }
     }
 
-    private void renderAndSend(TelegramLongPollingBot bot, Long chatId, String dashboard) {
+    private void renderAndSend(TelegramLongPollingBot bot, Long chatId, ChartDashboard dashboard) {
         long startedAt = System.nanoTime();
         try {
-            String cacheKey = dashboard + ":" + ("global".equals(dashboard) || "rating".equals(dashboard)
-                    || "earned".equals(dashboard) ? "global" : chatId);
+            String cacheKey = dashboard.slug() + ":" + (dashboard.globalScope() ? "global" : chatId);
             RenderedChart chart = cached(cacheKey);
             if (chart == null) {
                 chart = switch (dashboard) {
-                    case "activity" -> dashboardService.activityOverview(chatId);
-                    case "rating" -> dashboardService.economyRating(false);
-                    case "earned" -> dashboardService.economyRating(true);
-                    case "global" -> dashboardService.globalOverview();
-                    default -> dashboardService.groupOverview(chatId);
+                    case ACTIVITY -> dashboardService.activityOverview(chatId);
+                    case RATING -> dashboardService.economyRating(false);
+                    case EARNED -> dashboardService.economyRating(true);
+                    case GLOBAL -> dashboardService.globalOverview();
+                    case GROUP -> dashboardService.groupOverview(chatId);
                 };
                 putCache(cacheKey, chart);
             }
